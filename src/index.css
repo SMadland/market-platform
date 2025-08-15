@@ -17,30 +17,30 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 210 11% 15%;
 
-    --primary: 174 77% 47%;
+    --primary: 201 92% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 174 12% 95%;
-    --secondary-foreground: 174 77% 25%;
+    --secondary: 201 20% 95%;
+    --secondary-foreground: 201 92% 25%;
 
-    --muted: 174 12% 95%;
+    --muted: 201 20% 95%;
     --muted-foreground: 210 11% 50%;
 
-    --accent: 29 94% 57%;
+    --accent: 201 92% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 174 12% 90%;
-    --input: 174 12% 90%;
-    --ring: 174 77% 47%;
+    --border: 201 20% 90%;
+    --input: 201 20% 90%;
+    --ring: 201 92% 45%;
 
-    /* Custom tokens for tips platform */
-    --gradient-hero: linear-gradient(135deg, hsl(174 77% 47%), hsl(174 77% 35%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(174 12% 98%));
-    --shadow-soft: 0 4px 20px -4px hsl(174 77% 47% / 0.1);
-    --shadow-card: 0 2px 10px -2px hsl(174 77% 47% / 0.08);
+    /* Custom tokens for Mamon platform */
+    --gradient-hero: linear-gradient(135deg, hsl(201 92% 45%), hsl(201 92% 35%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(201 20% 98%));
+    --shadow-soft: 0 4px 20px -4px hsl(201 92% 45% / 0.1);
+    --shadow-card: 0 2px 10px -2px hsl(201 92% 45% / 0.08);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --radius: 0.5rem;
@@ -72,28 +72,28 @@ All colors MUST be HSL.
     --popover: 210 11% 10%;
     --popover-foreground: 180 100% 99%;
 
-    --primary: 174 77% 55%;
+    --primary: 201 92% 55%;
     --primary-foreground: 210 11% 8%;
 
-    --secondary: 174 12% 15%;
-    --secondary-foreground: 174 77% 70%;
+    --secondary: 201 20% 15%;
+    --secondary-foreground: 201 92% 70%;
 
-    --muted: 174 12% 15%;
+    --muted: 201 20% 15%;
     --muted-foreground: 210 11% 65%;
 
-    --accent: 29 94% 65%;
+    --accent: 201 92% 65%;
     --accent-foreground: 210 11% 8%;
 
     --destructive: 0 84% 70%;
     --destructive-foreground: 210 11% 8%;
 
-    --border: 174 12% 18%;
-    --input: 174 12% 18%;
-    --ring: 174 77% 55%;
+    --border: 201 20% 18%;
+    --input: 201 20% 18%;
+    --ring: 201 92% 55%;
 
     /* Dark mode custom tokens */
-    --gradient-hero: linear-gradient(135deg, hsl(174 77% 55%), hsl(174 77% 40%));
-    --gradient-card: linear-gradient(145deg, hsl(210 11% 10%), hsl(174 12% 12%));
+    --gradient-hero: linear-gradient(135deg, hsl(201 92% 55%), hsl(201 92% 40%));
+    --gradient-card: linear-gradient(145deg, hsl(210 11% 10%), hsl(201 20% 12%));
     --shadow-soft: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
     --shadow-card: 0 2px 10px -2px hsl(0 0% 0% / 0.2);
     --sidebar-background: 240 5.9% 10%;

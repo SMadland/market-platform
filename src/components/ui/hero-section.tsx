@@ -11,60 +11,51 @@ export const HeroSection = () => {
       {/* Hero content */}
       <div className="relative z-10 max-w-6xl mx-auto text-center">
         <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
-            <Lightbulb className="w-4 h-4" />
-            <span className="text-sm font-medium">Jungeltelegrafen i system</span>
-          </div>
-          
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            TipsHub
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 text-foreground">
+            Del dine favorittopplevelser og kjøp
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-            Del og oppdage verdifulle tips fra felleskapet. Fra hverdagshacks til ekspertkunnskap - 
-            alt samlet på ett sted.
+            Få tips fra venner og familie som kjenner deg best
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
           <Button size="lg" className="px-8 py-6 text-lg group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
-            Utforsk tips
+            Logg inn
             <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </Button>
-          <Button variant="outline" size="lg" className="px-8 py-6 text-lg border-2 hover:bg-primary/5">
-            Del ditt tips
           </Button>
         </div>
 
-        {/* Feature cards */}
+        {/* Feature steps */}
         <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
           <Card className="p-6 bg-gradient-to-br from-card to-primary/5 border border-primary/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 mx-auto">
-              <Users className="w-6 h-6 text-primary" />
+            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 mx-auto text-primary font-bold text-xl">
+              1
             </div>
-            <h3 className="text-lg font-semibold mb-2">Fellesskap</h3>
+            <h3 className="text-lg font-semibold mb-2">Kjøp noe på nett</h3>
             <p className="text-muted-foreground">
-              Bygg kunnskap sammen med andre som deler dine interesser
+              Gjør et kjøp hos en av våre partnere eller på nett
             </p>
           </Card>
 
           <Card className="p-6 bg-gradient-to-br from-card to-accent/5 border border-accent/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-4 mx-auto">
-              <Lightbulb className="w-6 h-6 text-accent" />
+            <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-4 mx-auto text-accent font-bold text-xl">
+              2
             </div>
-            <h3 className="text-lg font-semibold mb-2">Kvalitetstips</h3>
+            <h3 className="text-lg font-semibold mb-2">Motta kvitteringen på mail</h3>
             <p className="text-muted-foreground">
-              Oppdage kurerte tips som faktisk gjør en forskjell i hverdagen
+              Du får en kvittering med link til Mamon for å dele kjøpet
             </p>
           </Card>
 
           <Card className="p-6 bg-gradient-to-br from-card to-primary/5 border border-primary/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 mx-auto">
-              <Heart className="w-6 h-6 text-primary" />
+            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 mx-auto text-primary font-bold text-xl">
+              3
             </div>
-            <h3 className="text-lg font-semibold mb-2">Anerkjennelse</h3>
+            <h3 className="text-lg font-semibold mb-2">Del med venner og familie</h3>
             <p className="text-muted-foreground">
-              Få takk for tips som hjelper andre - bygg opp din tipsreputasjon
+              Klikk på linken og del anbefalingen med ditt nettverk på Mamon
             </p>
           </Card>
         </div>

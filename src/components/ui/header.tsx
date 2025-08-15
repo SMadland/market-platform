@@ -26,10 +26,10 @@ export const Header = () => {
         {/* Logo */}
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">T</span>
+            <span className="text-primary-foreground font-bold text-sm">M</span>
           </div>
           <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            TipsHub
+            Mamon
           </span>
         </div>
 
@@ -38,7 +38,7 @@ export const Header = () => {
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input 
-              placeholder="Søk etter tips..." 
+              placeholder="Søk etter anbefalinger..." 
               className="pl-10 bg-background border-border focus:border-primary"
             />
           </div>
@@ -48,7 +48,7 @@ export const Header = () => {
         <div className="flex items-center gap-3">
           <Button size="sm" className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-primary to-primary/90">
             <Plus className="w-4 h-4" />
-            Del tips
+            Del anbefaling
           </Button>
           
           <Button variant="ghost" size="sm" className="md:hidden">
