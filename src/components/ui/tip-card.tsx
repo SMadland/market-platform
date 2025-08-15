@@ -6,37 +6,54 @@ import { Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
 import { useState } from "react";
 
 interface TipCardProps {
+  id: string;
   title: string;
   content: string;
   author: string;
   category: string;
-  likes: number;
-  comments: number;
-  isLiked?: boolean;
-  isBookmarked?: boolean;
+  product_name?: string | null;
+  product_url?: string | null;
+  product_price?: number | null;
+  created_at: string;
 }
 
 export const TipCard = ({ 
+  id,
   title, 
   content, 
   author, 
   category, 
-  likes: initialLikes, 
-  comments,
-  isLiked = false,
-  isBookmarked = false 
+  product_name,
+  product_url,
+  product_price,
+  created_at
 }: TipCardProps) => {
-  const [liked, setLiked] = useState(isLiked);
-  const [bookmarked, setBookmarked] = useState(isBookmarked);
-  const [likes, setLikes] = useState(initialLikes);
-
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikes(prev => liked ? prev - 1 : prev + 1);
-  };
+  const [bookmarked, setBookmarked] = useState(false);
 
   const handleBookmark = () => {
     setBookmarked(!bookmarked);
+  };
+
+  const formatPrice = (price: number | null) => {
+    if (!price) return null;
+    return new Intl.NumberFormat('no-NO', {
+      style: 'currency',
+      currency: 'NOK',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return "i dag";
+    if (diffDays === 2) return "i går";
+    if (diffDays <= 7) return `${diffDays - 1} dager siden`;
+    return date.toLocaleDateString('no-NO');
   };
 
   return (
@@ -51,9 +68,14 @@ export const TipCard = ({
           </Avatar>
           <div>
             <p className="font-medium text-foreground">{author}</p>
-            <Badge variant="secondary" className="text-xs">
-              {category}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                {category}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                {formatDate(created_at)}
+              </span>
+            </div>
           </div>
         </div>
         <Button 
@@ -71,37 +93,64 @@ export const TipCard = ({
         <h3 className="text-lg font-semibold mb-2 text-foreground leading-tight">
           {title}
         </h3>
-        <p className="text-muted-foreground leading-relaxed">
+        <p className="text-muted-foreground leading-relaxed mb-3">
           {content}
         </p>
+        
+        {/* Product info */}
+        {(product_name || product_price) && (
+          <div className="bg-muted/30 rounded-lg p-3 mt-3">
+            <div className="flex items-center justify-between">
+              {product_name && (
+                <span className="font-medium text-sm">{product_name}</span>
+              )}
+              {product_price && (
+                <span className="text-primary font-semibold">
+                  {formatPrice(product_price)}
+                </span>
+              )}
+            </div>
+            {product_url && (
+              <a 
+                href={product_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline mt-1 block"
+              >
+                Se produktet →
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Actions */}
       <div className="flex items-center justify-between pt-4 border-t border-border/50">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleLike}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-              liked 
-                ? 'text-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30' 
-                : 'text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20'
-            }`}
-          >
-            <Heart className={`w-4 h-4 ${liked ? 'fill-current' : ''}`} />
-            <span className="text-sm font-medium">{likes}</span>
+          <Button variant="ghost" size="sm" className="flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20">
+            <Heart className="w-4 h-4" />
+            <span className="text-sm font-medium">0</span>
           </Button>
           
           <Button variant="ghost" size="sm" className="flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-primary hover:bg-primary/5">
             <MessageCircle className="w-4 h-4" />
-            <span className="text-sm font-medium">{comments}</span>
+            <span className="text-sm font-medium">0</span>
           </Button>
         </div>
 
-        <Button variant="ghost" size="sm" className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/5">
-          <Share2 className="w-4 h-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/5">
+            <Share2 className="w-4 h-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleBookmark}
+            className={`p-2 ${bookmarked ? 'text-accent' : 'text-muted-foreground'} hover:text-accent`}
+          >
+            <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-current' : ''}`} />
+          </Button>
+        </div>
       </div>
     </Card>
   );

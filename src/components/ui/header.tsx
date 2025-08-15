@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, User, LogOut } from "lucide-react";
+import { Search, User, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { CreateTipDialog } from "@/components/ui/create-tip-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,10 +47,7 @@ export const Header = () => {
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          <Button size="sm" className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-primary to-primary/90">
-            <Plus className="w-4 h-4" />
-            Del anbefaling
-          </Button>
+          <CreateTipDialog />
           
           <Button variant="ghost" size="sm" className="md:hidden">
             <Search className="w-4 h-4" />

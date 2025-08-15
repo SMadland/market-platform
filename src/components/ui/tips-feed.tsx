@@ -2,7 +2,9 @@ import { TipCard } from "@/components/ui/tip-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingUp, Clock, Star } from "lucide-react";
+import { TrendingUp, Clock, Star, Loader2 } from "lucide-react";
+import { useTips } from "@/hooks/useTips";
+import { useState } from "react";
 
 const categories = [
   "Alle", "Teknologi", "Hjem", "Helse", "Mat", "Reise", "Økonomi", "Arbeid"
@@ -52,6 +54,37 @@ const sampleTips = [
 ];
 
 export const TipsFeed = () => {
+  const { tips, loading, refreshTips } = useTips();
+  const [selectedCategory, setSelectedCategory] = useState("Alle");
+  const [sortBy, setSortBy] = useState("trending");
+
+  const filteredTips = tips.filter(tip => 
+    selectedCategory === "Alle" || tip.category === selectedCategory
+  );
+
+  const sortedTips = [...filteredTips].sort((a, b) => {
+    switch (sortBy) {
+      case "recent":
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      case "top":
+        // For now, sort by created date since we don't have likes data yet
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      default:
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+  });
+
+  if (loading) {
+    return (
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Laster tips...</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-16 px-4">
       <div className="max-w-4xl mx-auto">
@@ -70,8 +103,9 @@ export const TipsFeed = () => {
           {categories.map((category) => (
             <Badge 
               key={category}
-              variant={category === "Alle" ? "default" : "secondary"}
+              variant={category === selectedCategory ? "default" : "secondary"}
               className="px-4 py-2 cursor-pointer hover:bg-primary/10 transition-colors"
+              onClick={() => setSelectedCategory(category)}
             >
               {category}
             </Badge>
@@ -79,7 +113,7 @@ export const TipsFeed = () => {
         </div>
 
         {/* Sorting tabs */}
-        <Tabs defaultValue="trending" className="mb-8">
+        <Tabs value={sortBy} onValueChange={setSortBy} className="mb-8">
           <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
             <TabsTrigger value="trending" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
@@ -95,27 +129,31 @@ export const TipsFeed = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="trending" className="mt-8">
+          <TabsContent value={sortBy} className="mt-8">
             <div className="grid gap-6">
-              {sampleTips.map((tip) => (
-                <TipCard key={tip.id} {...tip} />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="recent" className="mt-8">
-            <div className="grid gap-6">
-              {[...sampleTips].reverse().map((tip) => (
-                <TipCard key={tip.id} {...tip} />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="top" className="mt-8">
-            <div className="grid gap-6">
-              {[...sampleTips].sort((a, b) => b.likes - a.likes).map((tip) => (
-                <TipCard key={tip.id} {...tip} />
-              ))}
+              {sortedTips.length > 0 ? (
+                sortedTips.map((tip) => (
+                  <TipCard 
+                    key={tip.id} 
+                    id={tip.id}
+                    title={tip.title}
+                    content={tip.description || ""}
+                    author={tip.profiles?.display_name || tip.profiles?.username || "Anonym"}
+                    category={tip.category || "Annet"}
+                    product_name={tip.product_name}
+                    product_url={tip.product_url}
+                    product_price={tip.product_price}
+                    created_at={tip.created_at}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Ingen tips funnet.</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Vær den første til å dele en anbefaling!
+                  </p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
