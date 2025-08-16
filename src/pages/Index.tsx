@@ -1,9 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Header } from "@/components/ui/header";
-import { HeroSection } from "@/components/ui/hero-section";
-import { TipsFeed } from "@/components/ui/tips-feed";
 import { useAuth } from "@/hooks/useAuth";
+import { LandingPage } from "@/pages/LandingPage";
 import { Loader2 } from "lucide-react";
 
 const Index = () => {
@@ -11,8 +9,8 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
+    if (!loading && user) {
+      navigate('/feed');
     }
   }, [loading, user, navigate]);
 
@@ -27,19 +25,11 @@ const Index = () => {
     );
   }
 
-  if (!user) {
-    return null; // Will redirect to auth
+  if (user) {
+    return null; // Will redirect to feed
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main>
-        <HeroSection />
-        <TipsFeed />
-      </main>
-    </div>
-  );
+  return <LandingPage />;
 };
 
 export default Index;

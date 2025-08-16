@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,69 +20,101 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Link } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const categories = [
-  "Teknologi", "Hjem", "Helse", "Mat", "Reise", "Økonomi", "Arbeid"
+  "Teknologi", "Hjem", "Helse", "Mat", "Reise", "Økonomi", "Arbeid", "Annet"
 ];
 
-export const CreateTipDialog = () => {
+interface CreateTipDialogProps {
+  children?: ReactNode;
+}
+
+export const CreateTipDialog = ({ children }: CreateTipDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    title: "",
+    product_url: "",
     description: "",
     category: "",
-    product_name: "",
-    product_url: "",
-    product_price: "",
     visibility: "friends" as "friends" | "public"
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !formData.product_url) return;
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("tips")
-        .insert({
-          title: formData.title,
-          description: formData.description,
-          category: formData.category || null,
-          product_name: formData.product_name || null,
-          product_url: formData.product_url || null,
-          product_price: formData.product_price ? parseFloat(formData.product_price) : null,
-          visibility: formData.visibility,
-          user_id: user.id
-        });
+          // Fetch product info from URL before creating tip
+          let productInfo = {
+            title: "Produktanbefaling",
+            image_url: null,
+            product_price: null
+          };
+
+          try {
+            const response = await fetch('/functions/v1/fetch-product-info', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXJwYmZpZmt6bmhxYnlmdHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNTkxODgsImV4cCI6MjA3MDczNTE4OH0.QUVT27UGijBsWHMxE8Fgfg0MPSVdFRWcqMRqjz3GTaQ'}`
+              },
+              body: JSON.stringify({ url: formData.product_url })
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              productInfo = {
+                title: data.title || "Produktanbefaling",
+                image_url: data.image_url,
+                product_price: data.product_price
+              };
+            }
+          } catch (error) {
+            console.error("Error fetching product info:", error);
+            // Continue with default values
+          }
+
+          const { error } = await supabase
+            .from("tips")
+            .insert({
+              title: productInfo.title,
+              description: formData.description,
+              category: formData.category || "Annet",
+              product_url: formData.product_url,
+              image_url: productInfo.image_url,
+              product_price: productInfo.product_price,
+              product_name: productInfo.title,
+              visibility: formData.visibility,
+              user_id: user.id
+            });
 
       if (error) throw error;
 
       toast({
-        title: "Tips opprettet!",
+        title: "Tips delt!",
         description: "Ditt tips har blitt delt med nettverket ditt.",
       });
 
       setFormData({
-        title: "",
+        product_url: "",
         description: "",
         category: "",
-        product_name: "",
-        product_url: "",
-        product_price: "",
         visibility: "friends"
       });
       setOpen(false);
+      
+      // Refresh to show new tip
+      window.location.reload();
     } catch (error) {
       console.error("Error creating tip:", error);
       toast({
         title: "Feil",
-        description: "Kunne ikke opprette tips. Prøv igjen.",
+        description: "Kunne ikke dele tips. Prøv igjen.",
         variant: "destructive",
       });
     } finally {
@@ -94,40 +127,53 @@ export const CreateTipDialog = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/90">
-          <Plus className="w-4 h-4" />
-          Del anbefaling
-        </Button>
+        {children || (
+          <Button size="sm" className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/90">
+            <Plus className="w-4 h-4" />
+            Del tips
+          </Button>
+        )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Del en ny anbefaling</DialogTitle>
+          <DialogTitle>Del et nytt tips</DialogTitle>
+          <DialogDescription>
+            Lim inn en produktlenke og legg til din anbefaling
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="title">Tittel *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="Gi anbefalingen din en beskrivende tittel..."
-              required
-            />
+          <div className="space-y-2">
+            <Label htmlFor="product_url">Produktlenke *</Label>
+            <div className="relative">
+              <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                id="product_url"
+                type="url"
+                placeholder="https://example.com/produkt"
+                className="pl-10"
+                value={formData.product_url}
+                onChange={(e) => setFormData(prev => ({ ...prev, product_url: e.target.value }))}
+                required
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Vi henter automatisk produktinfo og bilde fra lenken
+            </p>
           </div>
 
-          <div>
-            <Label htmlFor="description">Beskrivelse *</Label>
+          <div className="space-y-2">
+            <Label htmlFor="description">Din anbefaling</Label>
             <Textarea
               id="description"
+              placeholder="Hvorfor anbefaler du dette produktet?"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Beskriv anbefalingen din i detalj..."
-              rows={4}
-              required
+              rows={3}
+              className="resize-none"
             />
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="category">Kategori</Label>
             <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
               <SelectTrigger>
@@ -143,42 +189,7 @@ export const CreateTipDialog = () => {
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="product_name">Produktnavn</Label>
-              <Input
-                id="product_name"
-                value={formData.product_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, product_name: e.target.value }))}
-                placeholder="Navn på produkt..."
-              />
-            </div>
-            <div>
-              <Label htmlFor="product_price">Pris (kr)</Label>
-              <Input
-                id="product_price"
-                type="number"
-                value={formData.product_price}
-                onChange={(e) => setFormData(prev => ({ ...prev, product_price: e.target.value }))}
-                placeholder="0"
-                min="0"
-                step="0.01"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="product_url">Produktlenke</Label>
-            <Input
-              id="product_url"
-              type="url"
-              value={formData.product_url}
-              onChange={(e) => setFormData(prev => ({ ...prev, product_url: e.target.value }))}
-              placeholder="https://..."
-            />
-          </div>
-
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="visibility">Synlighet</Label>
             <Select value={formData.visibility} onValueChange={(value: "friends" | "public") => setFormData(prev => ({ ...prev, visibility: value }))}>
               <SelectTrigger>
@@ -195,9 +206,19 @@ export const CreateTipDialog = () => {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Avbryt
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Del anbefaling
+            <Button 
+              type="submit" 
+              disabled={loading || !formData.product_url}
+              className="bg-gradient-to-r from-primary to-primary/90"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deler...
+                </>
+              ) : (
+                "Del tips"
+              )}
             </Button>
           </div>
         </form>
