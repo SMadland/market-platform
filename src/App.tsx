@@ -9,6 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Feed from "./pages/Feed";
+import Groups from "./pages/Groups";
+import GroupChat from "./pages/GroupChat";
 import Network from "./pages/Network";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -24,6 +26,8 @@ const AppContent = () => {
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/feed" element={<Feed />} />
+        <Route path="/groups" element={<Groups />} />
+        <Route path="/groups/:groupId" element={<GroupChat />} />
         <Route path="/network" element={<Network />} />
         <Route path="/profile" element={<Profile />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

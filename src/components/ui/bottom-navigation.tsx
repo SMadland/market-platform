@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Users, User } from "lucide-react";
+import { Home, Users, User, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -7,6 +7,11 @@ const navItems = [
     to: "/feed",
     icon: Home,
     label: "Feed"
+  },
+  {
+    to: "/groups",
+    icon: MessageSquare,
+    label: "Grupper"
   },
   {
     to: "/network", 
@@ -25,7 +30,7 @@ export const BottomNavigation = () => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
-      <div className="grid grid-cols-3 h-16">
+      <div className="grid grid-cols-4 h-16">
         {navItems.map((item) => {
           const isActive = location.pathname === item.to;
           return (
