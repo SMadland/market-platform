@@ -139,6 +139,8 @@ export const TipsFeed = () => {
                     title={tip.title}
                     content={tip.description || ""}
                     author={tip.profiles?.display_name || tip.profiles?.username || "Anonym"}
+                    authorId={tip.user_id}
+                    authorAvatar={tip.profiles?.avatar_url}
                     category={tip.category || "Annet"}
                     product_name={tip.product_name}
                     product_url={tip.product_url}

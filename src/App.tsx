@@ -13,6 +13,7 @@ import Groups from "./pages/Groups";
 import GroupChat from "./pages/GroupChat";
 import Network from "./pages/Network";
 import Profile from "./pages/Profile";
+import UserProfile from "./pages/UserProfile";
 import { Business } from "./pages/Business";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +32,7 @@ const AppContent = () => {
         <Route path="/groups/:groupId" element={<GroupChat />} />
         <Route path="/network" element={<Network />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:userId" element={<UserProfile />} />
         <Route path="/business" element={<Business />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />

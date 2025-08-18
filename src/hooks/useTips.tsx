@@ -20,6 +20,7 @@ export interface Tip {
   profiles?: {
     username: string | null;
     display_name: string | null;
+    avatar_url: string | null;
   } | null;
 }
 
@@ -45,7 +46,7 @@ export const useTips = () => {
         (tipsData || []).map(async (tip) => {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("username, display_name")
+            .select("username, display_name, avatar_url")
             .eq("user_id", tip.user_id)
             .single();
           

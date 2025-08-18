@@ -1,17 +1,32 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTips } from "@/hooks/useTips";
 import { TipCard } from "@/components/ui/tip-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Edit, Users, Heart, Share } from "lucide-react";
+import { Settings, LogOut, Users, Heart, Share } from "lucide-react";
 import { Loader2 } from "lucide-react";
+import { ProfileEditDialog } from "@/components/ui/profile-edit-dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface UserProfile {
+  id: string;
+  user_id: string;
+  username: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+}
 
 const Profile = () => {
   const { user, signOut } = useAuth();
   const { tips, loading } = useTips();
+  const { toast } = useToast();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   // Filter tips by current user
   const userTips = tips.filter(tip => tip.user_id === user?.id);
@@ -22,7 +37,50 @@ const Profile = () => {
     likes: userTips.reduce((acc, tip) => acc + (tip.profiles ? 1 : 0), 0) // Mock calculation
   };
 
-  if (loading) {
+  const fetchProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: profileData, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (profileData) {
+        setProfile(profileData);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logget ut",
+        description: "Du har blitt logget ut.",
+      });
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Feil",
+        description: "Kunne ikke logge ut. Prøv igjen.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+  }, [user]);
+
+  if (loading || profileLoading) {
     return (
       <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
         <div className="text-center">
@@ -41,8 +99,8 @@ const Profile = () => {
           <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Profil
           </h1>
-          <Button variant="ghost" size="sm">
-            <Settings className="w-4 h-4" />
+          <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <LogOut className="w-4 h-4" />
           </Button>
         </div>
       </header>
@@ -52,17 +110,27 @@ const Profile = () => {
         <Card className="p-6 mb-6">
           <div className="flex items-center gap-4 mb-4">
             <Avatar className="w-16 h-16">
+              {profile?.avatar_url && (
+                <AvatarImage src={profile.avatar_url} alt="Profilbilde" />
+              )}
               <AvatarFallback className="bg-primary/10 text-primary text-xl">
-                {user?.user_metadata?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+                {profile?.display_name?.[0]?.toUpperCase() || 
+                 profile?.username?.[0]?.toUpperCase() || 
+                 user?.email?.[0]?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <h2 className="text-xl font-bold">
-                {user?.user_metadata?.display_name || user?.user_metadata?.username || 'Bruker'}
+                {profile?.display_name || profile?.username || 'Bruker'}
               </h2>
               <p className="text-muted-foreground">
-                @{user?.user_metadata?.username || 'bruker'}
+                @{profile?.username || 'bruker'}
               </p>
+              {profile?.bio && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  {profile.bio}
+                </p>
+              )}
               <p className="text-sm text-muted-foreground mt-1">
                 Medlem siden {new Date(user?.created_at || '').toLocaleDateString('nb-NO', { 
                   month: 'long', 
@@ -70,10 +138,10 @@ const Profile = () => {
                 })}
               </p>
             </div>
-            <Button variant="outline" size="sm">
-              <Edit className="w-4 h-4 mr-2" />
-              Rediger
-            </Button>
+            <ProfileEditDialog 
+              profile={profile} 
+              onProfileUpdate={fetchProfile}
+            />
           </div>
 
           {/* Stats */}
@@ -116,6 +184,8 @@ const Profile = () => {
                     title={tip.title}
                     content={tip.description || ""}
                     author={tip.profiles?.display_name || tip.profiles?.username || "Du"}
+                    authorId={tip.user_id}
+                    authorAvatar={profile?.avatar_url}
                     category={tip.category || "Annet"}
                     product_name={tip.product_name}
                     product_url={tip.product_url}

@@ -1,15 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface TipCardProps {
   id: string;
   title: string;
   content: string;
   author: string;
+  authorId?: string;
+  authorAvatar?: string | null;
   category: string;
   product_name?: string | null;
   product_url?: string | null;
@@ -22,16 +25,25 @@ export const TipCard = ({
   title, 
   content, 
   author, 
+  authorId,
+  authorAvatar,
   category, 
   product_name,
   product_url,
   product_price,
   created_at
 }: TipCardProps) => {
+  const navigate = useNavigate();
   const [bookmarked, setBookmarked] = useState(false);
 
   const handleBookmark = () => {
     setBookmarked(!bookmarked);
+  };
+
+  const handleProfileClick = () => {
+    if (authorId) {
+      navigate(`/profile/${authorId}`);
+    }
   };
 
   const formatPrice = (price: number | null) => {
@@ -61,13 +73,24 @@ export const TipCard = ({
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <Avatar className="w-10 h-10">
+          <Avatar 
+            className="w-10 h-10 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" 
+            onClick={handleProfileClick}
+          >
+            {authorAvatar && (
+              <AvatarImage src={authorAvatar} alt={`${author} profilbilde`} />
+            )}
             <AvatarFallback className="bg-primary/10 text-primary font-semibold">
               {author.substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-medium text-foreground">{author}</p>
+            <p 
+              className="font-medium text-foreground cursor-pointer hover:text-primary transition-colors" 
+              onClick={handleProfileClick}
+            >
+              {author}
+            </p>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="text-xs">
                 {category}
