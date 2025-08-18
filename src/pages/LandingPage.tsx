@@ -129,6 +129,83 @@ export const LandingPage = () => {
         </div>
       </section>
 
+      {/* Business Section */}
+      <section className="py-20 px-4 bg-gradient-to-r from-accent/5 to-primary/5">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              For bedrifter
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Koble din nettbutikk til Mamon og la kundene dele kjøpene sine automatisk
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h3 className="text-2xl font-bold mb-4">Pilotkunde-pakke</h3>
+              <p className="text-muted-foreground mb-6">
+                Bli en av våre første bedriftspartnere og få tilgang til Mamon API-et for å integrere 
+                kjøpsanbefalinger direkte i din nettbutikk.
+              </p>
+              
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                  <span>API-integrasjon for automatiske kjøpstips</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                  <span>Økt kundeengasjement gjennom sosial deling</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                  <span>Detaljert dokumentasjon og support</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                  <span>Pilotprogram med spesialpris</span>
+                </li>
+              </ul>
+
+              <Button 
+                size="lg" 
+                onClick={() => navigate('/business')}
+                className="px-8 py-6 text-lg bg-gradient-to-r from-accent to-accent/90"
+              >
+                Bli pilotkunde
+              </Button>
+            </div>
+
+            <Card className="p-8 bg-gradient-to-br from-card to-accent/5 border border-accent/20">
+              <div className="text-center">
+                <div className="text-4xl font-bold mb-2">Gratis</div>
+                <div className="text-muted-foreground mb-6">under pilotperioden</div>
+                
+                <div className="space-y-4 text-left">
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span>API-tilgang</span>
+                    <span className="text-primary">✓</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span>Teknisk support</span>
+                    <span className="text-primary">✓</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span>Integrasjonshjelp</span>
+                    <span className="text-primary">✓</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span>Ubegrenset bruk</span>
+                    <span className="text-primary">✓</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
