@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      business_subscribers: {
+        Row: {
+          api_access: boolean
+          api_key: string | null
+          created_at: string
+          email: string
+          id: string
+          status: string
+          stripe_customer_id: string | null
+          subscription_type: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          api_access?: boolean
+          api_key?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          subscription_type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          api_access?: boolean
+          api_key?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          subscription_type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           addressee_id: string
