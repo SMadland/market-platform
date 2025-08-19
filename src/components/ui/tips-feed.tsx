@@ -53,8 +53,12 @@ const sampleTips = [
   }
 ];
 
-export const TipsFeed = () => {
-  const { tips, loading, refreshTips } = useTips();
+interface TipsFeedProps {
+  tipType: 'private' | 'business';
+}
+
+export const TipsFeed = ({ tipType }: TipsFeedProps) => {
+  const { tips, loading, refreshTips } = useTips(tipType);
   const [selectedCategory, setSelectedCategory] = useState("Alle");
   const [sortBy, setSortBy] = useState("trending");
 
@@ -91,10 +95,13 @@ export const TipsFeed = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Oppdage nye tips
+            {tipType === 'private' ? 'Privatkjøp' : 'Bedriftskjøp'}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Utforsk de beste tipsene fra felleskapet, sortert etter popularitet og relevans
+            {tipType === 'private' 
+              ? 'Utforsk de beste anbefalingene for private kjøp fra felleskapet'
+              : 'Oppdage smarte bedriftskjøp og B2B-løsninger'
+            }
           </p>
         </div>
 

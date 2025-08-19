@@ -40,7 +40,8 @@ export const CreateTipDialog = ({ children }: CreateTipDialogProps) => {
     product_url: "",
     description: "",
     category: "",
-    visibility: "friends" as "friends" | "public"
+    visibility: "friends" as "friends" | "public",
+    tip_type: "private" as "private" | "business"
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,6 +91,7 @@ export const CreateTipDialog = ({ children }: CreateTipDialogProps) => {
               product_price: productInfo.product_price,
               product_name: productInfo.title,
               visibility: formData.visibility,
+              tip_type: formData.tip_type,
               user_id: user.id
             });
 
@@ -104,7 +106,8 @@ export const CreateTipDialog = ({ children }: CreateTipDialogProps) => {
         product_url: "",
         description: "",
         category: "",
-        visibility: "friends"
+        visibility: "friends",
+        tip_type: "private"
       });
       setOpen(false);
       
@@ -171,6 +174,19 @@ export const CreateTipDialog = ({ children }: CreateTipDialogProps) => {
               rows={3}
               className="resize-none"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tip_type">Type tips</Label>
+            <Select value={formData.tip_type} onValueChange={(value: "private" | "business") => setFormData(prev => ({ ...prev, tip_type: value }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="private">Privatkjøp</SelectItem>
+                <SelectItem value="business">Bedriftskjøp</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

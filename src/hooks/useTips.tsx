@@ -13,6 +13,7 @@ export interface Tip {
   product_price: number | null;
   image_url: string | null;
   visibility: string;
+  tip_type: string;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -24,7 +25,7 @@ export interface Tip {
   } | null;
 }
 
-export const useTips = () => {
+export const useTips = (tipType: 'private' | 'business' = 'private') => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [tips, setTips] = useState<Tip[]>([]);
@@ -37,6 +38,7 @@ export const useTips = () => {
       const { data: tipsData, error } = await supabase
         .from("tips")
         .select("*")
+        .eq("tip_type", tipType)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -72,7 +74,7 @@ export const useTips = () => {
 
   useEffect(() => {
     fetchTips();
-  }, [user]);
+  }, [user, tipType]);
 
   const refreshTips = () => {
     fetchTips();

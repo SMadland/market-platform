@@ -70,6 +70,7 @@ serve(async (req) => {
         image_url: finalProductImage,
         category,
         visibility,
+        tip_type: 'business', // B2B purchases are marked as business tips
         is_purchased: true
       })
       .select()
