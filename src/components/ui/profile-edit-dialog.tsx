@@ -55,8 +55,11 @@ export const ProfileEditDialog = ({ profile, onProfileUpdate }: ProfileEditDialo
 
     try {
       // Delete existing avatar if any
-      if (formData.avatar_url) {
-        await supabase.storage.from('avatars').remove([`${user.id}/avatar.${formData.avatar_url.split('.').pop()}`]);
+      if (formData.avatar_url && formData.avatar_url.includes(user.id)) {
+        // Extract the file path from the public URL
+        const urlParts = formData.avatar_url.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        await supabase.storage.from('avatars').remove([`${user.id}/${fileName}`]);
       }
 
       // Upload new avatar
