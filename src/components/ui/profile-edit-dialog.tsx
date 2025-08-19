@@ -48,31 +48,56 @@ export const ProfileEditDialog = ({ profile, onProfileUpdate }: ProfileEditDialo
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
-    const fileExt = file.name.split('.').pop();
-    const filePath = `${user.id}/avatar.${fileExt}`;
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Feil ved opplasting",
+        description: "Bildet må være mindre enn 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Feil ved opplasting",
+        description: "Kun bildefiler er tillatt.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const fileName = `avatar-${Date.now()}.${fileExt}`;
+    const filePath = `${user.id}/${fileName}`;
 
     setUploading(true);
 
     try {
-      // Delete existing avatar if any
-      if (formData.avatar_url && formData.avatar_url.includes(user.id)) {
-        // Extract the file path from the public URL
-        const urlParts = formData.avatar_url.split('/');
-        const fileName = urlParts[urlParts.length - 1];
-        await supabase.storage.from('avatars').remove([`${user.id}/${fileName}`]);
+      console.log('Starting avatar upload for user:', user.id);
+      
+      // Upload new avatar (upsert will overwrite if exists)
+      const { error: uploadError, data } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { 
+          upsert: true,
+          contentType: file.type 
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
       }
 
-      // Upload new avatar
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
+      console.log('Upload successful:', data);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
+
+      console.log('Public URL:', publicUrl);
 
       setFormData(prev => ({ ...prev, avatar_url: publicUrl }));
       
@@ -80,11 +105,11 @@ export const ProfileEditDialog = ({ profile, onProfileUpdate }: ProfileEditDialo
         title: "Bilde lastet opp",
         description: "Profilbildet ditt er oppdatert!",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading avatar:', error);
       toast({
         title: "Feil ved opplasting",
-        description: "Kunne ikke laste opp bildet. Prøv igjen.",
+        description: error.message || "Kunne ikke laste opp bildet. Prøv igjen.",
         variant: "destructive",
       });
     } finally {
@@ -98,7 +123,15 @@ export const ProfileEditDialog = ({ profile, onProfileUpdate }: ProfileEditDialo
     setLoading(true);
 
     try {
-      const { error } = await supabase
+      console.log('Saving profile data:', {
+        user_id: user.id,
+        username: formData.username || null,
+        display_name: formData.display_name || null,
+        bio: formData.bio || null,
+        avatar_url: formData.avatar_url || null,
+      });
+
+      const { error, data } = await supabase
         .from('profiles')
         .upsert({
           user_id: user.id,
@@ -106,9 +139,17 @@ export const ProfileEditDialog = ({ profile, onProfileUpdate }: ProfileEditDialo
           display_name: formData.display_name || null,
           bio: formData.bio || null,
           avatar_url: formData.avatar_url || null,
-        });
+        }, {
+          onConflict: 'user_id'
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      console.log('Profile updated successfully:', data);
 
       toast({
         title: "Profil oppdatert",
@@ -117,11 +158,11 @@ export const ProfileEditDialog = ({ profile, onProfileUpdate }: ProfileEditDialo
 
       setOpen(false);
       onProfileUpdate();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({
         title: "Feil",
-        description: "Kunne ikke oppdatere profil. Prøv igjen.",
+        description: error.message || "Kunne ikke oppdatere profil. Prøv igjen.",
         variant: "destructive",
       });
     } finally {
