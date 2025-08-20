@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mamon</string>
+    <string name="title_activity_main">Mamon</string>
+    <string name="package_name">no.mamon.app</string>
+    <string name="custom_url_scheme">no.mamon.app</string>
+    
+    <!-- App description for Play Store -->
+    <string name="app_description">Del dine favorittopplevelser og kjøp med venner og familie. Få personlige anbefalinger fra folk du stoler på.</string>
+    
+    <!-- Privacy and permissions -->
+    <string name="camera_permission_description">Appen trenger tilgang til kameraet for å ta bilder av produkter du vil anbefale.</string>
+    <string name="storage_permission_description">Appen trenger tilgang til lagring for å lagre og dele bilder.</string>
+</resources>
