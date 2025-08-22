@@ -1,0 +1,239 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+
+export interface Friend {
+  id: string;
+  user_id: string;
+  username: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  friendship_status?: 'accepted' | 'pending' | 'none';
+}
+
+export interface FriendRequest {
+  id: string;
+  requester_id: string;
+  addressee_id: string;
+  status: string;
+  created_at: string;
+  requester_profile?: {
+    username: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
+  };
+}
+
+export const useFriends = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchFriends = async () => {
+    if (!user) return;
+    
+    try {
+      // Get accepted friendships
+      const { data: friendshipsData, error } = await supabase
+        .from("friendships")
+        .select("*")
+        .eq("status", "accepted")
+        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
+
+      if (error) throw error;
+
+      // Get profiles for friends
+      const friendIds = friendshipsData?.map(friendship => 
+        friendship.requester_id === user.id ? friendship.addressee_id : friendship.requester_id
+      ) || [];
+
+      if (friendIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from("profiles")
+          .select("*")
+          .in("user_id", friendIds);
+
+        if (profilesError) throw profilesError;
+
+        setFriends(profilesData || []);
+      } else {
+        setFriends([]);
+      }
+    } catch (error) {
+      console.error("Error fetching friends:", error);
+      toast({
+        title: "Feil",
+        description: "Kunne ikke laste venner. Prøv igjen.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchFriendRequests = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: requestsData, error } = await supabase
+        .from("friendships")
+        .select(`
+          *,
+          requester_profile:profiles!friendships_requester_id_fkey(username, display_name, avatar_url)
+        `)
+        .eq("addressee_id", user.id)
+        .eq("status", "pending");
+
+      if (error) throw error;
+
+      setFriendRequests(requestsData || []);
+    } catch (error) {
+      console.error("Error fetching friend requests:", error);
+    }
+  };
+
+  const searchUsers = async (searchTerm: string): Promise<Friend[]> => {
+    if (!user || searchTerm.length < 2) return [];
+
+    try {
+      const { data: profilesData, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .neq("user_id", user.id)
+        .or(`username.ilike.%${searchTerm}%,display_name.ilike.%${searchTerm}%`)
+        .limit(20);
+
+      if (error) throw error;
+
+      // Check friendship status for each user
+      const usersWithStatus = await Promise.all(
+        (profilesData || []).map(async (profile) => {
+          const { data: friendshipData } = await supabase
+            .from("friendships")
+            .select("status")
+            .or(`and(requester_id.eq.${user.id},addressee_id.eq.${profile.user_id}),and(requester_id.eq.${profile.user_id},addressee_id.eq.${user.id})`)
+            .maybeSingle();
+
+          return {
+            ...profile,
+            id: profile.user_id,
+            friendship_status: friendshipData?.status || 'none'
+          };
+        })
+      );
+
+      return usersWithStatus;
+    } catch (error) {
+      console.error("Error searching users:", error);
+      return [];
+    }
+  };
+
+  const sendFriendRequest = async (addresseeId: string) => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from("friendships")
+        .insert({
+          requester_id: user.id,
+          addressee_id: addresseeId,
+          status: "pending"
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Venneforespørsel sendt",
+        description: "Din venneforespørsel er sendt!",
+      });
+
+      return true;
+    } catch (error) {
+      console.error("Error sending friend request:", error);
+      toast({
+        title: "Feil",
+        description: "Kunne ikke sende venneforespørsel. Prøv igjen.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const acceptFriendRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from("friendships")
+        .update({ status: "accepted" })
+        .eq("id", requestId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Venneforespørsel akseptert",
+        description: "Dere er nå venner!",
+      });
+
+      await fetchFriends();
+      await fetchFriendRequests();
+      return true;
+    } catch (error) {
+      console.error("Error accepting friend request:", error);
+      toast({
+        title: "Feil",
+        description: "Kunne ikke akseptere venneforespørsel. Prøv igjen.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const rejectFriendRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from("friendships")
+        .delete()
+        .eq("id", requestId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Venneforespørsel avvist",
+        description: "Forespørselen er avvist.",
+      });
+
+      await fetchFriendRequests();
+      return true;
+    } catch (error) {
+      console.error("Error rejecting friend request:", error);
+      toast({
+        title: "Feil",
+        description: "Kunne ikke avvise venneforespørsel. Prøv igjen.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchFriends();
+      fetchFriendRequests();
+    }
+  }, [user]);
+
+  return {
+    friends,
+    friendRequests,
+    loading,
+    searchUsers,
+    sendFriendRequest,
+    acceptFriendRequest,
+    rejectFriendRequest,
+    refreshFriends: fetchFriends,
+    refreshFriendRequests: fetchFriendRequests
+  };
+};

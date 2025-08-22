@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTips } from "@/hooks/useTips";
+import { useFriends } from "@/hooks/useFriends";
 import { TipCard } from "@/components/ui/tip-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, LogOut, Users, Heart, Share } from "lucide-react";
+import { Settings, LogOut, Users, Heart, Share, UserPlus, Check, X } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { ProfileEditDialog } from "@/components/ui/profile-edit-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface UserProfile {
   id: string;
@@ -24,7 +26,9 @@ interface UserProfile {
 const Profile = () => {
   const { user, signOut } = useAuth();
   const { tips, loading } = useTips();
+  const { friends, friendRequests, acceptFriendRequest, rejectFriendRequest } = useFriends();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
@@ -33,7 +37,7 @@ const Profile = () => {
 
   const stats = {
     tips: userTips.length,
-    friends: 12, // Mock data
+    friends: friends.length,
     likes: userTips.reduce((acc, tip) => acc + (tip.profiles ? 1 : 0), 0) // Mock calculation
   };
 
@@ -163,10 +167,18 @@ const Profile = () => {
 
         {/* Content Tabs */}
         <Tabs defaultValue="tips" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="tips" className="flex items-center gap-2">
               <Share className="w-4 h-4" />
               Mine tips
+            </TabsTrigger>
+            <TabsTrigger value="friends" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Venner
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="flex items-center gap-2">
+              <UserPlus className="w-4 h-4" />
+              Forespørsler
             </TabsTrigger>
             <TabsTrigger value="liked" className="flex items-center gap-2">
               <Heart className="w-4 h-4" />
@@ -199,6 +211,112 @@ const Profile = () => {
                   <p className="text-muted-foreground">Du har ikke delt noen tips ennå</p>
                   <p className="text-sm text-muted-foreground mt-2">
                     Del din første anbefaling med vennene dine!
+                  </p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="friends" className="mt-6">
+            <div className="space-y-4">
+              {friends.length > 0 ? (
+                friends.map((friend) => (
+                  <Card key={friend.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={friend.avatar_url} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {(friend.display_name || friend.username || '?')[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">
+                            {friend.display_name || friend.username}
+                          </div>
+                          {friend.display_name && friend.username && (
+                            <div className="text-sm text-muted-foreground">
+                              @{friend.username}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate(`/profile/${friend.user_id}`)}
+                      >
+                        Se profil
+                      </Button>
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <p className="text-muted-foreground">Du har ingen venner ennå</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Søk etter folk i meldinger for å legge til venner
+                  </p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="requests" className="mt-6">
+            <div className="space-y-4">
+              {friendRequests.length > 0 ? (
+                friendRequests.map((request) => (
+                  <Card key={request.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={request.requester_profile?.avatar_url} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {(request.requester_profile?.display_name || request.requester_profile?.username || '?')[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">
+                            {request.requester_profile?.display_name || request.requester_profile?.username}
+                          </div>
+                          {request.requester_profile?.display_name && request.requester_profile?.username && (
+                            <div className="text-sm text-muted-foreground">
+                              @{request.requester_profile.username}
+                            </div>
+                          )}
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(request.created_at).toLocaleDateString('no-NO')}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => acceptFriendRequest(request.id)}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <Check className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => rejectFriendRequest(request.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <UserPlus className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <p className="text-muted-foreground">Ingen venneforespørsler</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Nye forespørsler vil vises her
                   </p>
                 </div>
               )}

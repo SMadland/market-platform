@@ -1,24 +1,51 @@
 import { useState } from "react";
+import { useFriends } from "@/hooks/useFriends";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Search, UserPlus, Users, UserCheck } from "lucide-react";
+import { Search, UserPlus, Users, UserCheck, Loader2 } from "lucide-react";
 
 const Network = () => {
+  const { friends, searchUsers, sendFriendRequest } = useFriends();
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [sendingRequests, setSendingRequests] = useState<Set<string>>(new Set());
 
-  // Mock data - replace with real data later
-  const mockUsers = [
-    { id: 1, name: "Anna Hansen", username: "anna_h", mutualFriends: 3, isConnected: false },
-    { id: 2, name: "Lars Olsen", username: "lars_o", mutualFriends: 5, isConnected: true },
-    { id: 3, name: "Maria Karlsen", username: "maria_k", mutualFriends: 2, isConnected: false },
-  ];
+  const handleSearch = async (term: string) => {
+    setSearchTerm(term);
+    if (term.length < 2) {
+      setSearchResults([]);
+      return;
+    }
 
-  const filteredUsers = mockUsers.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    setIsSearching(true);
+    try {
+      const results = await searchUsers(term);
+      setSearchResults(results);
+    } catch (error) {
+      console.error("Error searching users:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSendFriendRequest = async (userId: string) => {
+    setSendingRequests(prev => new Set(prev).add(userId));
+    await sendFriendRequest(userId);
+    setSendingRequests(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(userId);
+      return newSet;
+    });
+    
+    // Refresh search results to update friendship status
+    if (searchTerm.length >= 2) {
+      const results = await searchUsers(searchTerm);
+      setSearchResults(results);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -36,9 +63,9 @@ const Network = () => {
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input 
-            placeholder="Søk etter venner..." 
+            placeholder="Søk etter personer..." 
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             className="pl-10 bg-background border-border focus:border-primary"
           />
         </div>
@@ -47,45 +74,65 @@ const Network = () => {
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Card className="p-4 text-center">
             <Users className="w-6 h-6 mx-auto mb-2 text-primary" />
-            <div className="text-2xl font-bold">12</div>
+            <div className="text-2xl font-bold">{friends.length}</div>
             <div className="text-sm text-muted-foreground">Venner</div>
           </Card>
           <Card className="p-4 text-center">
             <UserPlus className="w-6 h-6 mx-auto mb-2 text-accent" />
-            <div className="text-2xl font-bold">3</div>
-            <div className="text-sm text-muted-foreground">Forespørsler</div>
+            <div className="text-2xl font-bold">{searchResults.filter(u => u.friendship_status === 'pending').length}</div>
+            <div className="text-sm text-muted-foreground">Ventende</div>
           </Card>
         </div>
 
         {/* User List */}
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold mb-3">Foreslåtte venner</h2>
-          {filteredUsers.map((user) => (
+          <h2 className="text-lg font-semibold mb-3">
+            {searchTerm.length >= 2 ? "Søkeresultater" : "Søk etter personer"}
+          </h2>
+          
+          {isSearching ? (
+            <div className="text-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-muted-foreground">Søker...</p>
+            </div>
+          ) : searchResults.length > 0 ? (
+            searchResults.map((user) => (
             <Card key={user.id} className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarFallback className="bg-primary/10 text-primary">
-                      {user.name.split(' ').map(n => n[0]).join('')}
+                      {(user.display_name || user.username || '?')[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-medium">{user.name}</div>
+                    <div className="font-medium">{user.display_name || user.username}</div>
+                    {user.display_name && user.username && (
                     <div className="text-sm text-muted-foreground">@{user.username}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {user.mutualFriends} felles venner
-                    </div>
+                    )}
                   </div>
                 </div>
                 <Button 
                   size="sm" 
-                  variant={user.isConnected ? "secondary" : "default"}
-                  className={user.isConnected ? "" : "bg-gradient-to-r from-primary to-primary/90"}
+                  variant={user.friendship_status === 'accepted' ? "secondary" : user.friendship_status === 'pending' ? "outline" : "default"}
+                  className={user.friendship_status === 'none' ? "bg-gradient-to-r from-primary to-primary/90" : ""}
+                  disabled={sendingRequests.has(user.id) || user.friendship_status === 'pending'}
+                  onClick={() => user.friendship_status === 'none' && handleSendFriendRequest(user.id)}
                 >
-                  {user.isConnected ? (
+                  {sendingRequests.has(user.id) ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Sender...
+                    </>
+                  ) : user.friendship_status === 'accepted' ? (
                     <>
                       <UserCheck className="w-4 h-4 mr-2" />
                       Venner
+                    </>
+                  ) : user.friendship_status === 'pending' ? (
+                    <>
+                      <UserCheck className="w-4 h-4 mr-2" />
+                      Sendt
                     </>
                   ) : (
                     <>
@@ -97,12 +144,16 @@ const Network = () => {
               </div>
             </Card>
           ))}
-        </div>
-
-        {filteredUsers.length === 0 && searchTerm && (
+          )) : searchTerm.length >= 2 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Ingen brukere funnet</p>
+            </div>
+          ) : (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Ingen brukere funnet</p>
+            <p className="text-muted-foreground">Skriv minst 2 tegn for å søke etter personer</p>
           </div>
+          )}
+        </div>
         )}
       </div>
     </div>

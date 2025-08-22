@@ -79,6 +79,7 @@ export const useGroups = () => {
   };
 
   const createGroup = async (name: string, description?: string) => {
+  const createGroup = async (name: string, description?: string, memberIds: string[] = []) => {
     if (!user) return null;
 
     try {
@@ -104,6 +105,21 @@ export const useGroups = () => {
         });
 
       if (memberError) throw memberError;
+
+      // Add selected members to the group
+      if (memberIds.length > 0) {
+        const memberInserts = memberIds.map(memberId => ({
+          group_id: group.id,
+          user_id: memberId,
+          role: "member"
+        }));
+
+        const { error: membersError } = await supabase
+          .from("group_members")
+          .insert(memberInserts);
+
+        if (membersError) throw membersError;
+      }
 
       await fetchGroups();
       
