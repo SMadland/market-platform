@@ -79,6 +79,7 @@ export const useGroups = () => {
   };
 
   const createGroup = async (name: string, description?: string) => {
+  }
   const createGroup = async (name: string, description?: string, memberIds: string[] = []) => {
     if (!user) return null;
 
