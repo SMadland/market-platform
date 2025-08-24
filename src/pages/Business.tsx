@@ -274,5 +274,4 @@ const Business = () => {
       </section>
     </div>
   );
-
-export default Business;
+}
