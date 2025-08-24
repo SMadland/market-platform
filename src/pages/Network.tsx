@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, UserPlus, UserCheck, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-export const Network = () => {
+const Network = () => {
   const { user } = useAuth();
   const { friends, searchUsers, sendFriendRequest } = useFriends();
   const { toast } = useToast();
@@ -196,4 +196,5 @@ export const Network = () => {
       </div>
     </div>
   );
-};
+
+export default Network;
