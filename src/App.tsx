@@ -16,6 +16,7 @@ import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
 import Business from "./pages/Business";
 import NotFound from "./pages/NotFound";
+import Groups from "./pages/Groups";
 
 const queryClient = new QueryClient();
 
