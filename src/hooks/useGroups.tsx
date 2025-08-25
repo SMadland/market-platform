@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
-export interface Group {
+interface Group {
   id: string;
   name: string;
   description: string | null;
@@ -13,7 +13,7 @@ export interface Group {
   member_count?: number;
 }
 
-export interface GroupMessage {
+interface GroupMessage {
   id: string;
   group_id: string;
   user_id: string;
