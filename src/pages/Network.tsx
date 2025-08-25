@@ -1,1 +1,5 @@
-{"code":"rate-limited","message":"You have hit the rate limit. Please upgrade to keep chatting.","providerLimitHit":false,"isRetryable":true}
+const Network = () => {
+  return <div>Network page is under construction</div>;
+};
+
+export default Network;
