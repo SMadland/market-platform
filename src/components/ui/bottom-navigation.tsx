@@ -9,9 +9,9 @@ const navItems = [
     label: "Feed"
   },
   {
-    to: "/groups",
+    to: "/messages",
     icon: MessageSquare,
-    label: "Grupper"
+    label: "Meldinger"
   },
   {
     to: "/network", 
