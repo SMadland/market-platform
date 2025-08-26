@@ -116,7 +116,7 @@ export const useFriends = () => {
         .from("profiles")
         .select("*")
         .neq("user_id", user.id)
-        .or(`username.ilike.%${searchTerm}%,display_name.ilike.%${searchTerm}%`)
+        .or(`username.ilike.%${searchTerm}%,display_name.ilike.%${searchTerm}%,username.eq.${searchTerm},display_name.eq.${searchTerm}`)
         .limit(20);
 
       if (error) throw error;
@@ -145,7 +145,7 @@ export const useFriends = () => {
     }
   };
 
-  const sendFriendRequest = async (addresseeId: string) => {
+  const addFriend = async (addresseeId: string) => {
     if (!user) return false;
 
     try {
@@ -175,6 +175,8 @@ export const useFriends = () => {
       return false;
     }
   };
+
+  const sendFriendRequest = addFriend; // Alias for backward compatibility
 
   const acceptFriendRequest = async (requestId: string) => {
     try {
