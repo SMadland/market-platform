@@ -112,14 +112,18 @@ export const useFriends = () => {
     if (!user || searchTerm.length < 2) return [];
 
     try {
+      console.log('Searching for users with term:', searchTerm);
+      
       const { data: profilesData, error } = await supabase
         .from("profiles")
         .select("*")
         .neq("user_id", user.id)
-        .or(`username.ilike.%${searchTerm}%,display_name.ilike.%${searchTerm}%,username.eq.${searchTerm},display_name.eq.${searchTerm}`)
+        .or(`username.ilike.%${searchTerm}%,display_name.ilike.%${searchTerm}%`)
         .limit(20);
 
       if (error) throw error;
+      
+      console.log('Found profiles:', profilesData);
 
       // Check friendship status for each user
       const usersWithStatus = await Promise.all(
@@ -132,7 +136,7 @@ export const useFriends = () => {
 
           return {
             ...profile,
-            id: profile.user_id,
+            id: profile.user_id, // Make sure we use user_id as the main id
             friendship_status: friendshipData?.status || 'none'
           };
         })
@@ -142,6 +146,27 @@ export const useFriends = () => {
     } catch (error) {
       console.error("Error searching users:", error);
       return [];
+    }
+  };
+
+  const getUserById = async (userId: string): Promise<Friend | null> => {
+    try {
+      const { data: profileData, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        ...profileData,
+        id: profileData.user_id,
+        friendship_status: 'none'
+      };
+    } catch (error) {
+      console.error("Error fetching user by ID:", error);
+      return null;
     }
   };
 
@@ -244,6 +269,7 @@ export const useFriends = () => {
     friends,
     friendRequests,
     loading,
+    getUserById,
     searchUsers,
     sendFriendRequest,
     acceptFriendRequest,

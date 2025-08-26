@@ -11,16 +11,19 @@ import { UserPlus, Loader } from "lucide-react";
 
 const Network = () => {
   const { user } = useAuth();
-  const { friends, searchUsers, addFriend, loading } = useFriends();
+  const { friends, searchUsers, sendFriendRequest, loading } = useFriends();
   const { toast } = useToast();
 
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<any[]>([]);
+  const [sendingRequest, setSendingRequest] = useState<string | null>(null);
 
   useEffect(() => {
     if (search.trim().length > 1) {
       const fetchResults = async () => {
+        console.log('Searching for:', search);
         const found = await searchUsers(search);
+        console.log('Search results:', found);
         setResults(found);
       };
       fetchResults();
@@ -30,18 +33,29 @@ const Network = () => {
   }, [search, searchUsers]);
 
   const handleAddFriend = async (friendId: string) => {
+    setSendingRequest(friendId);
     try {
-      await addFriend(friendId);
+      const success = await sendFriendRequest(friendId);
+      if (success) {
       toast({
-        title: "Friend added!",
-        description: "The user has been added to your network.",
+        title: "Venneforespørsel sendt!",
+        description: "Venneforespørselen er sendt.",
       });
+        // Update the results to show the new status
+        setResults(prev => prev.map(user => 
+          user.id === friendId 
+            ? { ...user, friendship_status: 'pending' }
+            : user
+        ));
+      }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Could not add friend.",
+        title: "Feil",
+        description: "Kunne ikke sende venneforespørsel.",
         variant: "destructive",
       });
+    } finally {
+      setSendingRequest(null);
     }
   };
 
@@ -52,7 +66,7 @@ const Network = () => {
       {/* Search bar */}
       <div className="flex gap-2">
         <Input
-          placeholder="Search users..."
+          placeholder="Søk etter brukernavn eller navn..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -61,7 +75,7 @@ const Network = () => {
       {/* Search results */}
       {results.length > 0 && (
         <Card className="p-4 space-y-2">
-          <h2 className="text-lg font-semibold">Search Results</h2>
+          <h2 className="text-lg font-semibold">Søkeresultater</h2>
           {results.map((r) => (
             <div
               key={r.id}
@@ -69,44 +83,75 @@ const Network = () => {
             >
               <div className="flex items-center gap-2">
                 <Avatar>
-                  <AvatarImage src={r.avatar} />
-                  <AvatarFallback>{r.name?.[0] || "U"}</AvatarFallback>
+                  <AvatarImage src={r.avatar_url} />
+                  <AvatarFallback>
+                    {(r.display_name || r.username || "U")[0].toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
-                <span>{r.name}</span>
+                <div>
+                  <div className="font-medium">
+                    {r.display_name || r.username}
+                  </div>
+                  {r.display_name && r.username && (
+                    <div className="text-sm text-muted-foreground">
+                      @{r.username}
+                    </div>
+                  )}
+                </div>
               </div>
               <Button
                 size="sm"
-                variant="secondary"
+                variant={r.friendship_status === 'pending' ? "outline" : "secondary"}
                 onClick={() => handleAddFriend(r.id)}
+                disabled={r.friendship_status !== 'none' || sendingRequest === r.id}
               >
-                <UserPlus className="w-4 h-4 mr-1" /> Add
+                <UserPlus className="w-4 h-4 mr-1" />
+                {r.friendship_status === 'pending' ? 'Sendt' : 
+                 r.friendship_status === 'accepted' ? 'Venner' : 'Legg til'}
               </Button>
             </div>
           ))}
         </Card>
       )}
 
+      {search.length > 1 && results.length === 0 && (
+        <Card className="p-4 text-center">
+          <p className="text-muted-foreground">Ingen brukere funnet for "{search}"</p>
+        </Card>
+      )}
+
       {/* Friends list */}
       <Card className="p-4 space-y-2">
-        <h2 className="text-lg font-semibold">Friends</h2>
+        <h2 className="text-lg font-semibold">Venner</h2>
         {loading ? (
           <Loader className="animate-spin w-6 h-6" />
         ) : friends.length === 0 ? (
-          <p>No friends yet. Try adding some!</p>
+          <p>Ingen venner ennå. Prøv å legge til noen!</p>
         ) : (
           friends.map((f) => (
             <div
-              key={f.id}
+              key={f.user_id}
               className="flex justify-between items-center p-2 border rounded-lg"
             >
               <div className="flex items-center gap-2">
                 <Avatar>
-                  <AvatarImage src={f.avatar} />
-                  <AvatarFallback>{f.name?.[0] || "F"}</AvatarFallback>
+                  <AvatarImage src={f.avatar_url} />
+                  <AvatarFallback>
+                    {(f.display_name || f.username || "F")[0].toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
-                <span>{f.name}</span>
+                <div>
+                  <div className="font-medium">
+                    {f.display_name || f.username}
+                  </div>
+                  {f.display_name && f.username && (
+                    <div className="text-sm text-muted-foreground">
+                      @{f.username}
+                    </div>
+                  )}
+                </div>
               </div>
-              <Badge variant="secondary">Friend</Badge>
+              <Badge variant="secondary">Venn</Badge>
             </div>
           ))
         )}

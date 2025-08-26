@@ -10,23 +10,27 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Plus, Users, MessageSquare, Loader2, Search } from "lucide-react";
+import { Plus, Users, MessageSquare, Loader2, Search, User } from "lucide-react";
 
 const Messages = () => {
   const { user } = useAuth();
   const { groups, loading: groupsLoading, createGroupWithMembers } = useGroups();
-  const { friends, searchUsers } = useFriends();
+  const { friends, searchUsers, getUserById } = useFriends();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showDirectMessage, setShowDirectMessage] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [groupDescription, setGroupDescription] = useState("");
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [dmSearchTerm, setDmSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [dmSearchResults, setDmSearchResults] = useState<any[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
   // Search for users when search term changes
@@ -43,6 +47,21 @@ const Messages = () => {
     const timeoutId = setTimeout(performSearch, 300);
     return () => clearTimeout(timeoutId);
   }, [searchTerm, searchUsers]);
+
+  // Search for direct message users
+  useEffect(() => {
+    const performDmSearch = async () => {
+      if (dmSearchTerm.trim().length > 1) {
+        const results = await searchUsers(dmSearchTerm);
+        setDmSearchResults(results);
+      } else {
+        setDmSearchResults([]);
+      }
+    };
+
+    const timeoutId = setTimeout(performDmSearch, 300);
+    return () => clearTimeout(timeoutId);
+  }, [dmSearchTerm, searchUsers]);
 
   const handleCreateGroup = async () => {
     if (!groupName.trim()) {
@@ -89,6 +108,34 @@ const Messages = () => {
     }
   };
 
+  const handleStartDirectMessage = async (userId: string) => {
+    if (!user) return;
+
+    try {
+      // Get user info
+      const targetUser = await getUserById(userId);
+      if (!targetUser) {
+        toast({
+          title: "Feil",
+          description: "Kunne ikke finne bruker.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create a direct message group with just the two users
+      const groupName = `${user.email?.split('@')[0]} & ${targetUser.display_name || targetUser.username}`;
+      const group = await createGroupWithMembers(groupName, "Direktemelding", [userId]);
+      
+      if (group) {
+        setShowDirectMessage(false);
+        navigate(`/messages/${group.id}`);
+      }
+    } catch (error) {
+      console.error("Error starting direct message:", error);
+    }
+  };
+
   const toggleFriendSelection = (friendId: string) => {
     setSelectedFriends(prev => 
       prev.includes(friendId) 
@@ -116,13 +163,78 @@ const Messages = () => {
             Meldinger
           </h1>
           
-          <Dialog open={showCreateGroup} onOpenChange={setShowCreateGroup}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Ny gruppe
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Dialog open={showDirectMessage} onOpenChange={setShowDirectMessage}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Direktemelding
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Start direktemelding</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Søk etter person</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        placeholder="Søk etter brukernavn eller navn..."
+                        value={dmSearchTerm}
+                        onChange={(e) => setDmSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    
+                    {/* Search results */}
+                    {dmSearchResults.length > 0 && (
+                      <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-1">
+                        {dmSearchResults.map((user) => (
+                          <div
+                            key={user.id}
+                            className="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-muted"
+                            onClick={() => handleStartDirectMessage(user.id)}
+                          >
+                            <Avatar className="w-8 h-8">
+                              <AvatarImage src={user.avatar_url} />
+                              <AvatarFallback className="text-xs">
+                                {(user.display_name || user.username || '?')[0].toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <span className="text-sm font-medium">
+                                {user.display_name || user.username}
+                              </span>
+                              {user.display_name && user.username && (
+                                <div className="text-xs text-muted-foreground">
+                                  @{user.username}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {dmSearchTerm.length > 1 && dmSearchResults.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Ingen brukere funnet
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={showCreateGroup} onOpenChange={setShowCreateGroup}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  Ny gruppe
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Opprett ny gruppe</DialogTitle>
@@ -154,7 +266,7 @@ const Messages = () => {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
-                      placeholder="Søk etter venner..."
+                      placeholder="Søk etter brukernavn eller navn..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -190,6 +302,12 @@ const Messages = () => {
                       ))}
                     </div>
                   )}
+                  
+                  {searchTerm.length > 1 && searchResults.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Ingen brukere funnet
+                    </p>
+                  )}
 
                   {/* Selected friends */}
                   {selectedFriends.length > 0 && (
@@ -200,7 +318,7 @@ const Messages = () => {
                       <div className="flex flex-wrap gap-1">
                         {selectedFriends.map((friendId) => {
                           const friend = searchResults.find(u => u.id === friendId) || 
-                                        friends.find(f => f.user_id === friendId);
+                                        friends.find(f => f.id === friendId);
                           return (
                             <Badge
                               key={friendId}
@@ -242,6 +360,8 @@ const Messages = () => {
                 </div>
               </div>
             </DialogContent>
+            </Dialog>
+          </div>
           </Dialog>
         </div>
       </header>
@@ -302,47 +422,6 @@ const Messages = () => {
             </div>
           )}
         </div>
-
-        {/* Direct messages section */}
-        {friends.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold mb-4">Direktemeldinger</h2>
-            <div className="space-y-2">
-              {friends.slice(0, 5).map((friend) => (
-                <Card
-                  key={friend.user_id}
-                  className="p-3 cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => {
-                    // For now, create a direct message group with just this friend
-                    // In a real app, you might have a separate direct messages system
-                    toast({
-                      title: "Direktemeldinger",
-                      description: "Direktemeldinger kommer snart!",
-                    });
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={friend.avatar_url} />
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {(friend.display_name || friend.username || '?')[0].toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <h4 className="font-medium">
-                        {friend.display_name || friend.username}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Klikk for å sende melding
-                      </p>
-                    </div>
-                    <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
