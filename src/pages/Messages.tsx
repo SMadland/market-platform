@@ -1,17 +1,10 @@
-import { useEffect, useState } from "react";
+// src/pages/Messages.tsx
+import React, { useEffect, useState } from "react";
 import { supabase } from "../integrations/supabase/client";
-import { v4 as uuidv4 } from "uuid";
+import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
-import { ScrollArea } from "../components/ui/scroll-area";
-
-interface Profile {
-  id: string;
-  username: string;
-  full_name?: string;
-  avatar_url?: string;
-}
+import { Avatar, AvatarFallback } from "../components/ui/avatar";
 
 interface Chat {
   id: string;
@@ -23,185 +16,172 @@ interface Chat {
 interface Message {
   id: string;
   chat_id: string;
-  sender: string;
+  sender_id: string;
   content: string;
   created_at: string;
 }
 
 export default function Messages() {
-  const [user, setUser] = useState<Profile | null>(null);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [user, setUser] = useState<any>(null);
   const [chats, setChats] = useState<Chat[]>([]);
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [newMessage, setNewMessage] = useState("");
 
-  // Hent innlogget bruker og opprett profil hvis ikke eksisterer
+  // Hent innlogget bruker
   useEffect(() => {
-    async function fetchUser() {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) return;
-
-      let { data: profile } = await supabase
-        .from<Profile>("profiles")
-        .select("*")
-        .eq("id", authUser.id)
-        .single();
-
-      if (!profile) {
-        const { data: newProfile } = await supabase
-          .from<Profile>("profiles")
-          .insert({ id: authUser.id, username: authUser.email?.split("@")[0] || `user-${uuidv4()}` })
-          .select()
-          .single();
-        profile = newProfile!;
+    const getUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (!error && data?.user) {
+        setUser(data.user);
       }
-
-      setUser(profile);
-    }
-    fetchUser();
+    };
+    getUser();
   }, []);
 
-  // Hent alle chatter for brukeren
+  // Hent chatter
   useEffect(() => {
-    if (!user) return;
-    async function fetchChats() {
+    const fetchChats = async () => {
+      if (!user) return;
       const { data, error } = await supabase
-        .from<Chat>("chats")
+        .from("chats")
         .select("*")
         .or(`user1.eq.${user.id},user2.eq.${user.id}`)
         .order("created_at", { ascending: false });
 
-      if (!error) setChats(data || []);
-    }
+      if (!error && data) setChats(data);
+    };
     fetchChats();
   }, [user]);
 
-  // Hent meldinger for valgt chat
+  // Hent meldinger når en chat er valgt
   useEffect(() => {
-    if (!selectedChat) return;
-    async function fetchMessages() {
+    const fetchMessages = async () => {
+      if (!selectedChat) return;
       const { data, error } = await supabase
-        .from<Message>("messages")
+        .from("messages")
         .select("*")
         .eq("chat_id", selectedChat.id)
         .order("created_at", { ascending: true });
-      if (!error) setMessages(data || []);
-    }
+
+      if (!error && data) setMessages(data);
+    };
     fetchMessages();
   }, [selectedChat]);
 
-  // Hent alle brukere for søk
-  useEffect(() => {
-    async function fetchProfiles() {
-      const { data, error } = await supabase
-        .from<Profile>("profiles")
-        .select("*");
-      if (!error) setProfiles(data?.filter(p => p.id !== user?.id) || []);
-    }
-    if (user) fetchProfiles();
-  }, [user]);
+  // Send melding
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedChat || !user) return;
 
-  // Opprett ny chat
-  const createChat = async (friend: Profile) => {
-    if (!user) return;
-    // Sjekk om chat allerede finnes
-    const existing = chats.find(c =>
-      (c.user1 === user.id && c.user2 === friend.id) ||
-      (c.user1 === friend.id && c.user2 === user.id)
-    );
-    if (existing) return setSelectedChat(existing);
+    const { error } = await supabase.from("messages").insert({
+      chat_id: selectedChat.id,
+      sender_id: user.id,
+      content: newMessage.trim(),
+    });
 
-    const { data, error } = await supabase
-      .from<Chat>("chats")
-      .insert({ user1: user.id, user2: friend.id })
-      .select()
-      .single();
-    if (!error && data) {
-      setChats([data, ...chats]);
-      setSelectedChat(data);
+    if (!error) {
+      setNewMessage("");
+      // Refresh messages
+      const { data } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("chat_id", selectedChat.id)
+        .order("created_at", { ascending: true });
+      setMessages(data || []);
     }
   };
 
-  // Send melding
-  const sendMessage = async () => {
-    if (!user || !selectedChat || !newMessage.trim()) return;
-
-    const { data, error } = await supabase
-      .from<Message>("messages")
-      .insert({ chat_id: selectedChat.id, sender: user.id, content: newMessage })
-      .select()
-      .single();
-
-    if (!error && data) {
-      setMessages([...messages, data]);
-      setNewMessage("");
-    }
+  // Tilbake til chat-liste
+  const backToChats = () => {
+    setSelectedChat(null);
+    setMessages([]);
   };
 
   return (
-    <div className="flex h-full gap-4 p-4">
-      {/* Venstre kolonne: Chatter + søk */}
-      <div className="w-1/3 flex flex-col gap-4">
-        <Card>
+    <div className="p-4">
+      {!selectedChat ? (
+        // Listevisning
+        <Card className="p-4">
           <CardHeader>
-            <CardTitle>Søk etter venner</CardTitle>
+            <CardTitle>Meldinger</CardTitle>
           </CardHeader>
           <CardContent>
-            {profiles.map(profile => (
-              <Button key={profile.id} className="mb-2 w-full" onClick={() => createChat(profile)}>
-                {profile.username}
-              </Button>
-            ))}
+            <Input placeholder="Søk etter venner..." className="mb-4" />
+            <div className="space-y-3">
+              {chats.map((chat) => (
+                <div
+                  key={chat.id}
+                  onClick={() => setSelectedChat(chat)}
+                  className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent cursor-pointer"
+                >
+                  <Avatar>
+                    <AvatarFallback>
+                      {chat.user1 === user?.id ? "U2" : "U1"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">
+                      {chat.user1 === user?.id ? chat.user2 : chat.user1}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Trykk for å åpne
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {chats.length === 0 && (
+                <p className="text-center text-muted-foreground">
+                  Ingen chatter ennå. Start en ny!
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
-
-        <Card className="flex-1 overflow-y-auto">
-          <CardHeader>
-            <CardTitle>Dine chatter</CardTitle>
+      ) : (
+        // Chatvisning
+        <Card className="p-4">
+          <CardHeader className="flex justify-between items-center">
+            <CardTitle>
+              Chat med{" "}
+              {selectedChat.user1 === user?.id
+                ? selectedChat.user2
+                : selectedChat.user1}
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={backToChats}>
+              Tilbake
+            </Button>
           </CardHeader>
-          <CardContent>
-            {chats.map(chat => {
-              const friendId = chat.user1 === user?.id ? chat.user2 : chat.user1;
-              const friend = profiles.find(p => p.id === friendId);
-              return (
-                <Button key={chat.id} variant="ghost" className="w-full text-left mb-2" onClick={() => setSelectedChat(chat)}>
-                  {friend?.username || "Ukjent"}
-                </Button>
-              );
-            })}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Høyre kolonne: Meldinger */}
-      <div className="flex-1 flex flex-col gap-2">
-        <Card className="flex-1 flex flex-col">
-          <CardHeader>
-            <CardTitle>{selectedChat ? "Samtale" : "Velg en chat"}</CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 p-2">
-            <ScrollArea className="h-full">
-              {messages.map(msg => (
-                <div key={msg.id} className={`mb-2 p-2 rounded ${msg.sender === user?.id ? "bg-blue-200 self-end" : "bg-gray-200 self-start"}`}>
+          <CardContent className="flex flex-col h-[70vh]">
+            <div className="flex-1 overflow-y-auto space-y-2 p-2 border rounded-lg">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`p-2 rounded-lg max-w-[70%] ${
+                    msg.sender_id === user?.id
+                      ? "bg-primary text-white self-end ml-auto"
+                      : "bg-muted text-foreground self-start"
+                  }`}
+                >
                   {msg.content}
                 </div>
               ))}
-            </ScrollArea>
+              {messages.length === 0 && (
+                <p className="text-center text-muted-foreground">
+                  Ingen meldinger ennå
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Input
+                placeholder="Skriv en melding..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+              />
+              <Button onClick={sendMessage}>Send</Button>
+            </div>
           </CardContent>
         </Card>
-
-        {selectedChat && (
-          <div className="flex gap-2 mt-2">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Skriv melding..."
-            />
-            <Button onClick={sendMessage}>Send</Button>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
