@@ -1,89 +1,170 @@
-import { useAuth } from "@/hooks/useAuth";
-import { useGroups } from "@/hooks/useGroups";
-import { useFriends } from "@/hooks/useFriends";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { useEffect, useState } from "react";
+import { supabase } from "../supabaseClient"; // sørg for at du har satt opp klienten
+import { v4 as uuidv4 } from "uuid";
 
-const Messages = () => {
-  const { user } = useAuth();
-  const { groups, createGroupWithMembers } = useGroups();
-  const { friends } = useFriends();
-  const { toast } = useToast();
-  const navigate = useNavigate();
+interface Profile {
+  id: string;
+  username: string;
+  full_name: string;
+  avatar_url?: string;
+}
 
-  // Eksempel på dialog state
-  const handleCreateGroup = async () => {
-    try {
-      const group = await createGroupWithMembers(
-        "Ny gruppe",
-        undefined,
-        friends.map((f) => f.user_id)
-      );
+interface Chat {
+  id: string;
+  user1: string;
+  user2: string;
+  created_at: string;
+}
 
-      if (group) {
-        toast({ title: "Gruppe opprettet!" });
-        navigate(`/chat/${group.id}`);
-      }
-    } catch (err) {
-      toast({ title: "Kunne ikke opprette gruppe", variant: "destructive" });
-    }
+interface Message {
+  id: string;
+  chat_id: string;
+  sender: string;
+  content: string;
+  created_at: string;
+}
+
+export default function Messages() {
+  const [user, setUser] = useState<any>(null);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+
+  // Hent innlogget bruker
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+    });
+  }, []);
+
+  // Hent chatter for brukeren
+  useEffect(() => {
+    if (!user) return;
+    const loadChats = async () => {
+      const { data, error } = await supabase
+        .from("chats")
+        .select("*")
+        .or(`user1.eq.${user.id},user2.eq.${user.id}`)
+        .order("created_at", { ascending: false });
+
+      if (!error && data) setChats(data);
+    };
+    loadChats();
+  }, [user]);
+
+  // Hent meldinger for valgt chat
+  useEffect(() => {
+    if (!selectedChat) return;
+    const loadMessages = async () => {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("chat_id", selectedChat.id)
+        .order("created_at", { ascending: true });
+
+      if (!error && data) setMessages(data);
+    };
+    loadMessages();
+
+    // Realtime subscription
+    const channel = supabase
+      .channel("messages")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages", filter: `chat_id=eq.${selectedChat.id}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new as Message]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedChat]);
+
+  // Send melding
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedChat) return;
+
+    await supabase.from("messages").insert([
+      {
+        id: uuidv4(),
+        chat_id: selectedChat.id,
+        sender: user.id,
+        content: newMessage.trim(),
+      },
+    ]);
+
+    setNewMessage("");
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-40 w-full border-b bg-background">
-        <div className="px-4 h-16 flex items-center justify-between">
-          <h1 className="text-xl font-bold">Meldinger</h1>
+    <div className="flex h-screen">
+      {/* Chat-liste */}
+      <div className="w-1/3 border-r overflow-y-auto">
+        <h2 className="p-4 font-bold">Dine chatter</h2>
+        {chats.map((chat) => (
+          <div
+            key={chat.id}
+            className={`p-4 cursor-pointer hover:bg-gray-100 ${
+              selectedChat?.id === chat.id ? "bg-gray-200" : ""
+            }`}
+            onClick={() => setSelectedChat(chat)}
+          >
+            Chat med{" "}
+            {chat.user1 === user.id ? chat.user2 : chat.user1}
+          </div>
+        ))}
+      </div>
 
-          {/* Ny gruppe knapp */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">Ny gruppe</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Opprett ny gruppe</DialogTitle>
-              </DialogHeader>
-              <div className="flex flex-col gap-4">
-                {/* Du kan legge til søk/venneliste her */}
-                <Button onClick={handleCreateGroup}>Opprett</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </header>
-
-      {/* Innhold */}
-      <div className="p-4">
-        {groups.length === 0 ? (
-          <p className="text-muted-foreground">Du har ingen grupper ennå.</p>
-        ) : (
-          <ul className="space-y-2">
-            {groups.map((group) => (
-              <li key={group.id}>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate(`/chat/${group.id}`)}
+      {/* Meldingsvindu */}
+      <div className="flex-1 flex flex-col">
+        {selectedChat ? (
+          <>
+            <div className="flex-1 overflow-y-auto p-4">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`mb-2 ${
+                    msg.sender === user.id ? "text-right" : "text-left"
+                  }`}
                 >
-                  {group.name}
-                </Button>
-              </li>
-            ))}
-          </ul>
+                  <span
+                    className={`inline-block px-3 py-2 rounded-lg ${
+                      msg.sender === user.id
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-200 text-black"
+                    }`}
+                  >
+                    {msg.content}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t flex gap-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                className="flex-1 border rounded p-2"
+                placeholder="Skriv en melding..."
+              />
+              <button
+                onClick={sendMessage}
+                className="bg-blue-500 text-white px-4 py-2 rounded"
+              >
+                Send
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center justify-center flex-1">
+            <p>Velg en chat for å starte</p>
+          </div>
         )}
       </div>
     </div>
   );
-};
-
-export default Messages;
+}
