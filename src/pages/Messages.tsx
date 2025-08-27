@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../supabaseClient"; // sørg for at du har satt opp klienten
+import { supabase } from "../integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
-
-interface Profile {
-  id: string;
-  username: string;
-  full_name: string;
-  avatar_url?: string;
-}
 
 interface Chat {
   id: string;
@@ -38,17 +31,16 @@ export default function Messages() {
     });
   }, []);
 
-  // Hent chatter for brukeren
+  // Hent chatter
   useEffect(() => {
     if (!user) return;
     const loadChats = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("chats")
         .select("*")
         .or(`user1.eq.${user.id},user2.eq.${user.id}`)
         .order("created_at", { ascending: false });
-
-      if (!error && data) setChats(data);
+      if (data) setChats(data);
     };
     loadChats();
   }, [user]);
@@ -57,17 +49,15 @@ export default function Messages() {
   useEffect(() => {
     if (!selectedChat) return;
     const loadMessages = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("messages")
         .select("*")
         .eq("chat_id", selectedChat.id)
         .order("created_at", { ascending: true });
-
-      if (!error && data) setMessages(data);
+      if (data) setMessages(data);
     };
     loadMessages();
 
-    // Realtime subscription
     const channel = supabase
       .channel("messages")
       .on(
@@ -79,15 +69,12 @@ export default function Messages() {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => supabase.removeChannel(channel);
   }, [selectedChat]);
 
   // Send melding
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedChat) return;
-
     await supabase.from("messages").insert([
       {
         id: uuidv4(),
@@ -96,7 +83,6 @@ export default function Messages() {
         content: newMessage.trim(),
       },
     ]);
-
     setNewMessage("");
   };
 
@@ -113,8 +99,7 @@ export default function Messages() {
             }`}
             onClick={() => setSelectedChat(chat)}
           >
-            Chat med{" "}
-            {chat.user1 === user.id ? chat.user2 : chat.user1}
+            Chat med {chat.user1 === user.id ? chat.user2 : chat.user1}
           </div>
         ))}
       </div>
