@@ -18,135 +18,135 @@ interface Message {
 }
 
 export default function Messages() {
-  const [user, setUser] = useState<any>(null);
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
 
-  // Hent innlogget bruker
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-    });
-  }, []);
+  // Erstatt med innlogget bruker sin ID
+  const userId = "44c1de38-c815-4070-9369-babc4cfc7e0b"; 
 
-  // Hent chatter
-  useEffect(() => {
-    if (!user) return;
-    const loadChats = async () => {
-      const { data } = await supabase
-        .from("chats")
-        .select("*")
-        .or(`user1.eq.${user.id},user2.eq.${user.id}`)
-        .order("created_at", { ascending: false });
-      if (data) setChats(data);
-    };
-    loadChats();
-  }, [user]);
+  // Hent alle chater brukeren er med i
+  const fetchChats = async () => {
+    const { data, error } = await supabase
+      .from("chats")
+      .select("*")
+      .or(`user1.eq.${userId},user2.eq.${userId}`)
+      .order("created_at", { ascending: false });
 
-  // Hent meldinger for valgt chat
-  useEffect(() => {
-    if (!selectedChat) return;
-    const loadMessages = async () => {
-      const { data } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("chat_id", selectedChat.id)
-        .order("created_at", { ascending: true });
-      if (data) setMessages(data);
-    };
-    loadMessages();
-
-    const channel = supabase
-      .channel("messages")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `chat_id=eq.${selectedChat.id}` },
-        (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
-        }
-      )
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
-  }, [selectedChat]);
-
-  // Send melding
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedChat) return;
-    await supabase.from("messages").insert([
-      {
-        id: uuidv4(),
-        chat_id: selectedChat.id,
-        sender: user.id,
-        content: newMessage.trim(),
-      },
-    ]);
-    setNewMessage("");
+    if (error) console.error("Error fetching chats:", error);
+    else setChats(data as Chat[]);
   };
 
+  // Hent meldinger for valgt chat
+  const fetchMessages = async (chatId: string) => {
+    const { data, error } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("chat_id", chatId)
+      .order("created_at", { ascending: true });
+
+    if (error) console.error("Error fetching messages:", error);
+    else setMessages(data as Message[]);
+  };
+
+  // Opprett ny chat
+  const createChat = async (otherUserId: string) => {
+    const { data, error } = await supabase
+      .from("chats")
+      .insert([{ user1: userId, user2: otherUserId }])
+      .select();
+
+    if (error) console.error("Error creating chat:", error);
+    else if (data) {
+      setChats([...(chats || []), data[0]]);
+      setSelectedChat(data[0]);
+      setMessages([]);
+    }
+  };
+
+  // Send ny melding
+  const sendMessage = async () => {
+    if (!selectedChat || !newMessage) return;
+
+    const { data, error } = await supabase
+      .from("messages")
+      .insert([
+        {
+          id: uuidv4(),
+          chat_id: selectedChat.id,
+          sender: userId,
+          content: newMessage,
+        },
+      ])
+      .select();
+
+    if (error) console.error("Error sending message:", error);
+    else if (data) {
+      setMessages([...messages, data[0]]);
+      setNewMessage("");
+    }
+  };
+
+  useEffect(() => {
+    fetchChats();
+  }, []);
+
+  useEffect(() => {
+    if (selectedChat) fetchMessages(selectedChat.id);
+  }, [selectedChat]);
+
   return (
-    <div className="flex h-screen">
-      {/* Chat-liste */}
-      <div className="w-1/3 border-r overflow-y-auto">
-        <h2 className="p-4 font-bold">Dine chatter</h2>
-        {chats.map((chat) => (
-          <div
-            key={chat.id}
-            className={`p-4 cursor-pointer hover:bg-gray-100 ${
-              selectedChat?.id === chat.id ? "bg-gray-200" : ""
-            }`}
-            onClick={() => setSelectedChat(chat)}
-          >
-            Chat med {chat.user1 === user.id ? chat.user2 : chat.user1}
-          </div>
-        ))}
+    <div style={{ display: "flex", height: "100vh" }}>
+      <div style={{ width: "250px", borderRight: "1px solid gray" }}>
+        <h3>Chater</h3>
+        <button onClick={() => createChat(prompt("Skriv bruker-ID:") || "")}>
+          Ny Chat
+        </button>
+        <ul>
+          {chats.map((chat) => (
+            <li
+              key={chat.id}
+              onClick={() => setSelectedChat(chat)}
+              style={{
+                cursor: "pointer",
+                fontWeight: selectedChat?.id === chat.id ? "bold" : "normal",
+              }}
+            >
+              {chat.user1 === userId ? chat.user2 : chat.user1}
+            </li>
+          ))}
+        </ul>
       </div>
 
-      {/* Meldingsvindu */}
-      <div className="flex-1 flex flex-col">
-        {selectedChat ? (
-          <>
-            <div className="flex-1 overflow-y-auto p-4">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`mb-2 ${
-                    msg.sender === user.id ? "text-right" : "text-left"
-                  }`}
-                >
-                  <span
-                    className={`inline-block px-3 py-2 rounded-lg ${
-                      msg.sender === user.id
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-200 text-black"
-                    }`}
-                  >
-                    {msg.content}
-                  </span>
-                </div>
-              ))}
+      <div style={{ flex: 1, padding: "1rem" }}>
+        <h3>Meldinger</h3>
+        <div
+          style={{
+            border: "1px solid gray",
+            height: "80%",
+            overflowY: "scroll",
+            padding: "0.5rem",
+            marginBottom: "1rem",
+          }}
+        >
+          {messages.map((msg) => (
+            <div key={msg.id}>
+              <strong>{msg.sender === userId ? "Meg" : msg.sender}:</strong>{" "}
+              {msg.content}
             </div>
-            <div className="p-4 border-t flex gap-2">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                className="flex-1 border rounded p-2"
-                placeholder="Skriv en melding..."
-              />
-              <button
-                onClick={sendMessage}
-                className="bg-blue-500 text-white px-4 py-2 rounded"
-              >
-                Send
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="flex items-center justify-center flex-1">
-            <p>Velg en chat for å starte</p>
+          ))}
+        </div>
+
+        {selectedChat && (
+          <div>
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Skriv melding..."
+            />
+            <button onClick={sendMessage}>Send</button>
           </div>
         )}
       </div>
