@@ -2,15 +2,13 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../integrations/supabase/client";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
-import { ScrollArea } from "../components/ui/scroll-area";
+import { Card } from "../components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { useAuth } from "../hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
 interface Profile {
   id: string;
-  user_id: string;
   username: string;
   display_name?: string;
   avatar_url?: string;
@@ -40,6 +38,7 @@ export default function Messages() {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // Fetch profiles based on search
   const fetchProfiles = async () => {
     if (!user) return;
     let query = supabase.from("profiles").select("*");
@@ -49,6 +48,7 @@ export default function Messages() {
     else setProfiles(data || []);
   };
 
+  // Fetch user's chats
   const fetchChats = async () => {
     if (!user) return;
     const { data, error } = await supabase
@@ -60,6 +60,7 @@ export default function Messages() {
     else setChats(data || []);
   };
 
+  // Fetch messages for a chat
   const fetchMessages = async (chatId: string) => {
     const { data, error } = await supabase
       .from("messages")
@@ -77,32 +78,8 @@ export default function Messages() {
 
   const handleStartChat = async (profileId: string) => {
     if (!user) return;
-
-    // Sjekk at innlogget bruker har profil
-    const { data: myProfile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!myProfile) {
-      console.error("Du må opprette en profil før du kan starte chat.");
-      return;
-    }
-
-    // Sjekk at den andre brukeren har profil
-    const { data: otherProfile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", profileId)
-      .maybeSingle();
-
-    if (!otherProfile) {
-      console.error("Brukeren har ikke profil, chat kan ikke startes.");
-      return;
-    }
-
     try {
+      // Insert a new chat
       const { data, error } = await supabase
         .from("chats")
         .insert([{ user1: user.id, user2: profileId }])
@@ -148,15 +125,15 @@ export default function Messages() {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-background p-4 gap-4">
-      {/* Venstre kolonne: Søk og chatter */}
-      <Card className="w-full md:w-1/3 p-4">
+      {/* Left column: search + chats */}
+      <Card className="w-full md:w-1/3 p-4 flex flex-col">
         <Input 
           placeholder="Søk etter venner..." 
           value={search} 
           onChange={(e) => setSearch(e.target.value)} 
           className="mb-4"
         />
-        <ScrollArea className="h-[60vh]">
+        <div className="flex-1 overflow-auto">
           {profiles.map((profile) => (
             <Card key={profile.id} className="p-2 mb-2 cursor-pointer hover:bg-accent/10 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -195,14 +172,14 @@ export default function Messages() {
               </Card>
             )
           })}
-        </ScrollArea>
+        </div>
       </Card>
 
-      {/* Høyre kolonne: Meldinger */}
+      {/* Right column: messages */}
       <Card className="w-full md:w-2/3 p-4 flex flex-col">
         {selectedChat ? (
           <>
-            <ScrollArea className="flex-1 mb-4">
+            <div className="flex-1 mb-4 overflow-auto">
               {messages.map((msg) => {
                 const isMe = msg.sender === user?.id;
                 return (
@@ -214,7 +191,7 @@ export default function Messages() {
                   </div>
                 )
               })}
-            </ScrollArea>
+            </div>
             <div className="flex gap-2">
               <Input 
                 placeholder="Skriv en melding..." 
