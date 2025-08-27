@@ -6,11 +6,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
 import { ScrollArea } from "../components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { useAuth } from "../hooks/useAuth";
-import { v4 as uuidv4 } from "uuid";
 import { Loader2 } from "lucide-react";
 
 interface Profile {
   id: string;
+  user_id: string;
   username: string;
   display_name?: string;
   avatar_url?: string;
@@ -77,6 +77,31 @@ export default function Messages() {
 
   const handleStartChat = async (profileId: string) => {
     if (!user) return;
+
+    // Sjekk at innlogget bruker har profil
+    const { data: myProfile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!myProfile) {
+      console.error("Du må opprette en profil før du kan starte chat.");
+      return;
+    }
+
+    // Sjekk at den andre brukeren har profil
+    const { data: otherProfile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", profileId)
+      .maybeSingle();
+
+    if (!otherProfile) {
+      console.error("Brukeren har ikke profil, chat kan ikke startes.");
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from("chats")
