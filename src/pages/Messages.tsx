@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../integrations/supabase/client";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import { Card } from "../components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { useAuth } from "../hooks/useAuth";
+import { v4 as uuidv4 } from "uuid";
 import { Loader2 } from "lucide-react";
 
 interface Profile {
@@ -38,7 +39,15 @@ export default function Messages() {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Fetch chatter der innlogget bruker er deltaker
+  const fetchProfiles = async () => {
+    if (!user) return;
+    let query = supabase.from("profiles").select("*");
+    if (search.trim()) query = query.ilike("username", `%${search}%`);
+    const { data, error } = await query;
+    if (error) console.error(error);
+    else setProfiles(data || []);
+  };
+
   const fetchChats = async () => {
     if (!user) return;
     const { data, error } = await supabase
@@ -50,7 +59,6 @@ export default function Messages() {
     else setChats(data || []);
   };
 
-  // Hent meldinger for valgt chat
   const fetchMessages = async (chatId: string) => {
     const { data, error } = await supabase
       .from("messages")
@@ -61,13 +69,11 @@ export default function Messages() {
     else setMessages(data || []);
   };
 
-  // Velg chat
   const handleSelectChat = async (chat: Chat) => {
     setSelectedChat(chat);
     await fetchMessages(chat.id);
   };
 
-  // Start ny chat med knapp
   const handleStartChat = async (profileId: string) => {
     if (!user) return;
     try {
@@ -77,14 +83,13 @@ export default function Messages() {
         .select()
         .maybeSingle();
       if (error) throw error;
-      await fetchChats();
+      if (data) fetchChats();
     } catch (error) {
       console.error("Error creating chat:", error);
-      alert("Kunne ikke opprette chat. Sjekk at profilen finnes og at du har RLS-policyer korrekt.");
+      alert("Kunne ikke opprette chat. Sjekk at begge brukere har profil.");
     }
   };
 
-  // Send melding
   const handleSendMessage = async () => {
     if (!selectedChat || !newMessage.trim() || !user) return;
     try {
@@ -102,18 +107,7 @@ export default function Messages() {
       setNewMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
-      alert("Kunne ikke sende melding.");
     }
-  };
-
-  // Søk etter profiler
-  const fetchProfiles = async () => {
-    if (!user) return;
-    let query = supabase.from("profiles").select("*");
-    if (search.trim()) query = query.ilike("username", `%${search}%`);
-    const { data, error } = await query;
-    if (error) console.error(error);
-    else setProfiles(data || []);
   };
 
   useEffect(() => {
@@ -183,7 +177,7 @@ export default function Messages() {
       <Card className="w-full md:w-2/3 p-4 flex flex-col">
         {selectedChat ? (
           <>
-            <div className="flex-1 mb-4 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto mb-4">
               {messages.map((msg) => {
                 const isMe = msg.sender === user?.id;
                 return (
