@@ -10,12 +10,13 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Feed from "./pages/Feed";
 import Messages from "./pages/Messages";
-import Chat from "./pages/Chat";
+import Chat from "./pages/Chat.tsx";
 import Network from "./pages/Network";
 import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
-import { Business } from "./pages/Business";
+import Business from "./pages/Business";
 import NotFound from "./pages/NotFound";
+import Groups from "./pages/Groups";
 
 const queryClient = new QueryClient();
 
