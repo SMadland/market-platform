@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
-export interface Friend {
+interface Friend {
   id: string;
   user_id: string;
   username: string | null;
@@ -12,7 +12,7 @@ export interface Friend {
   friendship_status?: 'accepted' | 'pending' | 'none';
 }
 
-export interface FriendRequest {
+interface FriendRequest {
   id: string;
   requester_id: string;
   addressee_id: string;

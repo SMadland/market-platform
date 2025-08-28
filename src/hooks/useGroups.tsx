@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
-export interface Group {
+interface Group {
   id: string;
   name: string;
   description: string | null;
@@ -13,7 +13,7 @@ export interface Group {
   member_count?: number;
 }
 
-export interface GroupMessage {
+interface GroupMessage {
   id: string;
   group_id: string;
   user_id: string;
@@ -40,12 +40,26 @@ export const useGroups = () => {
     if (!user) return;
     
     try {
+      // First, get groups where user is a member
+      const { data: membershipData, error: membershipError } = await supabase
+        .from("group_members")
+        .select("group_id")
+        .eq("user_id", user.id);
+
+      if (membershipError) throw membershipError;
+
+      if (!membershipData || membershipData.length === 0) {
+        setGroups([]);
+        return;
+      }
+
+      const groupIds = membershipData.map(m => m.group_id);
+
+      // Then get the group details
       const { data: groupsData, error } = await supabase
         .from("groups")
-        .select(`
-          *,
-          group_members!inner(*)
-        `)
+        .select("*")
+        .in("id", groupIds)
         .order("updated_at", { ascending: false });
 
       if (error) throw error;
@@ -55,7 +69,7 @@ export const useGroups = () => {
         (groupsData || []).map(async (group) => {
           const { count } = await supabase
             .from("group_members")
-            .select("*", { count: "exact", head: true })
+            .select("user_id", { count: "exact", head: true })
             .eq("group_id", group.id);
           
           return {
