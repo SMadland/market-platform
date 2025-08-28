@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { useAuth } from "../hooks/useAuth";
 
 interface Profile {
-  user_id: string; // Bruker user_id som key
+  id: string;
   username: string;
   display_name: string | null;
   avatar_url: string | null;
@@ -18,7 +18,7 @@ interface Profile {
 interface Message {
   id: string;
   chat_id: string;
-  sender_id: string;
+  sender: string;
   content: string;
   created_at: string;
 }
@@ -43,9 +43,10 @@ export default function Messages() {
       if (!user) return;
       const { data, error } = await supabase
         .from("profiles")
-        .select("user_id, username, display_name, avatar_url")
-        .neq("user_id", user.id); // Ekskluder deg selv
-      if (!error && data) setFriends(data as Profile[]);
+        .select("id, username, display_name, avatar_url");
+      if (!error && data) {
+        setFriends(data.filter((f) => f.id !== user.id));
+      }
     };
     fetchFriends();
   }, [user]);
@@ -58,12 +59,12 @@ export default function Messages() {
         .from("chats")
         .select("*")
         .or(`user1.eq.${user.id},user2.eq.${user.id}`);
-      if (!error && data) setChats(data as Chat[]);
+      if (!error && data) setChats(data);
     };
     fetchChats();
   }, [user]);
 
-  // Hent meldinger for valgt chat
+  // Hent meldinger
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedChat) return;
@@ -72,7 +73,7 @@ export default function Messages() {
         .select("*")
         .eq("chat_id", selectedChat.id)
         .order("created_at", { ascending: true });
-      if (!error && data) setMessages(data as Message[]);
+      if (!error && data) setMessages(data);
     };
     fetchMessages();
   }, [selectedChat]);
@@ -80,20 +81,31 @@ export default function Messages() {
   const handleStartChat = async (friendId: string) => {
     if (!user) return;
     try {
+      // Sjekk om chat allerede eksisterer
+      const existing = chats.find(
+        (c) =>
+          (c.user1 === user.id && c.user2 === friendId) ||
+          (c.user1 === friendId && c.user2 === user.id)
+      );
+      if (existing) {
+        setSelectedChat(existing);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("chats")
         .insert([{ user1: user.id, user2: friendId }])
         .select()
         .single();
 
-      if (error && error.code !== "23505") {
+      if (error) {
         console.error("Error creating chat:", error);
         return;
       }
 
       if (data) {
-        setChats((prev) => [...prev, data as Chat]);
-        setSelectedChat(data as Chat);
+        setChats((prev) => [...prev, data]);
+        setSelectedChat(data);
       }
     } catch (err) {
       console.error("Chat error:", err);
@@ -104,12 +116,12 @@ export default function Messages() {
     if (!user || !selectedChat || !newMessage.trim()) return;
     const { data, error } = await supabase
       .from("messages")
-      .insert([{ chat_id: selectedChat.id, sender_id: user.id, content: newMessage }])
+      .insert([{ chat_id: selectedChat.id, sender: user.id, content: newMessage }])
       .select()
       .single();
 
     if (!error && data) {
-      setMessages((prev) => [...prev, data as Message]);
+      setMessages((prev) => [...prev, data]);
       setNewMessage("");
     }
   };
@@ -122,9 +134,9 @@ export default function Messages() {
         <ScrollArea className="h-[calc(100vh-64px)]">
           {friends.map((friend) => (
             <div
-              key={friend.user_id}
+              key={friend.id}
               className="flex items-center gap-3 p-3 hover:bg-gray-100 cursor-pointer"
-              onClick={() => handleStartChat(friend.user_id)}
+              onClick={() => handleStartChat(friend.id)}
             >
               <Avatar>
                 <AvatarImage src={friend.avatar_url || ""} />
@@ -144,11 +156,11 @@ export default function Messages() {
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`mb-2 flex ${msg.sender_id === user?.id ? "justify-end" : "justify-start"}`}
+                  className={`mb-2 flex ${msg.sender === user?.id ? "justify-end" : "justify-start"}`}
                 >
                   <div
                     className={`px-3 py-2 rounded-2xl ${
-                      msg.sender_id === user?.id ? "bg-blue-500 text-white" : "bg-gray-200"
+                      msg.sender === user?.id ? "bg-blue-500 text-white" : "bg-gray-200"
                     }`}
                   >
                     {msg.content}
