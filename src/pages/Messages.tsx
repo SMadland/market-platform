@@ -1,6 +1,6 @@
 // src/pages/Messages.tsx
 import React, { useEffect, useState } from "react";
-import { supabase } from "../supabaseClient";
+import { supabase } from "../integrations/supabase/client";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -15,18 +15,18 @@ interface Profile {
   avatar_url: string | null;
 }
 
-interface Chat {
-  id: string;
-  user1: string;
-  user2: string;
-}
-
 interface Message {
   id: string;
   chat_id: string;
   sender: string;
   content: string;
   created_at: string;
+}
+
+interface Chat {
+  id: string;
+  user1: string;
+  user2: string;
 }
 
 export default function Messages() {
@@ -44,8 +44,12 @@ export default function Messages() {
       const { data, error } = await supabase
         .from("profiles")
         .select("id, username, display_name, avatar_url")
-        .neq("user_id", user.id);
-      if (!error && data) setFriends(data);
+        .neq("id", user.id);
+      if (error) {
+        console.error("Error fetching friends:", error);
+      } else if (data) {
+        setFriends(data);
+      }
     };
     fetchFriends();
   }, [user]);
@@ -57,9 +61,12 @@ export default function Messages() {
       const { data, error } = await supabase
         .from("chats")
         .select("*")
-        .or(`user1.eq.${user.id},user2.eq.${user.id}`)
-        .order("updated_at", { ascending: false });
-      if (!error && data) setChats(data);
+        .or(`user1.eq.${user.id},user2.eq.${user.id}`);
+      if (error) {
+        console.error("Error fetching chats:", error);
+      } else if (data) {
+        setChats(data);
+      }
     };
     fetchChats();
   }, [user]);
@@ -73,54 +80,52 @@ export default function Messages() {
         .select("*")
         .eq("chat_id", selectedChat.id)
         .order("created_at", { ascending: true });
-      if (!error && data) setMessages(data);
+      if (error) {
+        console.error("Error fetching messages:", error);
+      } else if (data) {
+        setMessages(data);
+      }
     };
     fetchMessages();
   }, [selectedChat]);
 
   const handleStartChat = async (friendId: string) => {
     if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from("chats")
+        .insert([{ user1: user.id, user2: friendId }])
+        .select()
+        .single();
 
-    // Sjekk om chat allerede eksisterer
-    const existing = chats.find(
-      (c) =>
-        (c.user1 === user.id && c.user2 === friendId) ||
-        (c.user1 === friendId && c.user2 === user.id)
-    );
-    if (existing) {
-      setSelectedChat(existing);
-      return;
-    }
+      if (error && error.code !== "23505") {
+        console.error("Error creating chat:", error);
+        return;
+      }
 
-    const { data, error } = await supabase
-      .from("chats")
-      .insert([{ user1: user.id, user2: friendId }])
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error creating chat:", error);
-      return;
-    }
-
-    if (data) {
-      setChats((prev) => [...prev, data]);
-      setSelectedChat(data);
+      if (data) {
+        setChats((prev) => [...prev, data]);
+        setSelectedChat(data);
+      }
+    } catch (err) {
+      console.error("Chat error:", err);
     }
   };
 
   const handleSendMessage = async () => {
     if (!user || !selectedChat || !newMessage.trim()) return;
-
     const { data, error } = await supabase
       .from("messages")
-      .insert([
-        { chat_id: selectedChat.id, sender: user.id, content: newMessage },
-      ])
+      .insert([{ chat_id: selectedChat.id, sender: user.id, content: newMessage }])
       .select()
       .single();
 
-    if (!error && data) {
+    if (error) {
+      console.error("Error sending message:", error);
+      return;
+    }
+
+    if (data) {
       setMessages((prev) => [...prev, data]);
       setNewMessage("");
     }
@@ -156,9 +161,7 @@ export default function Messages() {
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`mb-2 flex ${
-                    msg.sender === user?.id ? "justify-end" : "justify-start"
-                  }`}
+                  className={`mb-2 flex ${msg.sender === user?.id ? "justify-end" : "justify-start"}`}
                 >
                   <div
                     className={`px-3 py-2 rounded-2xl ${
