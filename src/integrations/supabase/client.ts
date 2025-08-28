@@ -1,9 +1,13 @@
-// src/integrations/supabase/client.ts
+// integrations/supabase/client.ts
 import { createClient } from "@supabase/supabase-js";
 
-// ⚡ Sett inn din Supabase URL og anon key her
+// Sett dine egne Supabase-prosjektverdier her
 const SUPABASE_URL = "https://azmrpbfifkznhqbyftsg.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXJwYmZpZmt6bmhxYnlmdHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNTkxODgsImV4cCI6MjA3MDczNTE4OH0.QUVT27UGijBsWHMxE8Fgfg0MPSVdFRWcqMRqjz3GTaQ";
 
-// Opprett Supabase-klienten
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+});
