@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
-const Business = () => {
+export const Business = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -275,5 +275,3 @@ const Business = () => {
     </div>
   );
 };
-
-export default Business;

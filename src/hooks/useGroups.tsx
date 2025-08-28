@@ -79,10 +79,8 @@ export const useGroups = () => {
   };
 
   const createGroup = async (name: string, description?: string) => {
-    return null;
-  };
-
-  const createGroupWithMembers = async (name: string, description?: string, memberIds: string[] = []) => {
+  }
+  const createGroup = async (name: string, description?: string, memberIds: string[] = []) => {
     if (!user) return null;
 
     try {
@@ -147,5 +145,5 @@ export const useGroups = () => {
     fetchGroups();
   }, [user]);
 
-  return { groups, loading, createGroup, createGroupWithMembers, refreshGroups: fetchGroups };
+  return { groups, loading, createGroup, refreshGroups: fetchGroups };
 };
