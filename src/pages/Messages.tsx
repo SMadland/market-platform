@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
-import { useGroups, Group } from "@/hooks/useGroups";
+import { useGroups } from "@/hooks/useGroups";
 import { useFriends } from "@/hooks/useFriends";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -9,8 +9,26 @@ const Messages = () => {
   const { user } = useAuth();
   const { groups, loading, createGroupWithMembers } = useGroups();
   const { friends, searchUsers } = useFriends();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-      // Create group with selected members
-      const group = await createGroupWithMembers(groupName, undefined, selectedPeople.map(p => p.user_id));
-      
+  const handleCreateGroup = async () => {
+    try {
+      const group = await createGroupWithMembers("My Group", undefined, []);
       if (group) {
+        toast({ description: "Group created successfully!" });
+      }
+    } catch (err) {
+      toast({ description: "Failed to create group" });
+    }
+  };
+
+  return (
+    <div>
+      <h1>Messages</h1>
+      <Button onClick={handleCreateGroup}>Create Group</Button>
+    </div>
+  );
+};
+
+export default Messages;
