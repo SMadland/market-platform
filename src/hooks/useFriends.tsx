@@ -78,18 +78,31 @@ export const useFriends = () => {
     if (!user) return;
     
     try {
-      const { data: requestsData, error } = await supabase
+      const { data: friendshipsData, error } = await supabase
         .from("friendships")
-        .select(`
-          *,
-          requester_profile:profiles!friendships_requester_id_fkey(username, display_name, avatar_url)
-        `)
+        .select("*")
         .eq("addressee_id", user.id)
         .eq("status", "pending");
 
       if (error) throw error;
 
-      setFriendRequests(requestsData || []);
+      // Fetch profiles for each requester
+      const requestsWithProfiles = await Promise.all(
+        (friendshipsData || []).map(async (friendship) => {
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("username, display_name, avatar_url")
+            .eq("user_id", friendship.requester_id)
+            .single();
+
+          return {
+            ...friendship,
+            requester_profile: profileData
+          };
+        })
+      );
+
+      setFriendRequests(requestsWithProfiles);
     } catch (error) {
       console.error("Error fetching friend requests:", error);
     }

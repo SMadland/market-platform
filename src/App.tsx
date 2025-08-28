@@ -31,6 +31,7 @@ const AppContent = () => {
         <Route path="/feed" element={<Feed />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/messages/:groupId" element={<Chat />} />
+        <Route path="/groups" element={<Messages />} />
         <Route path="/network" element={<Network />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/:userId" element={<UserProfile />} />
