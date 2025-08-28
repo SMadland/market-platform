@@ -1,87 +1,117 @@
+// src/pages/Messages.tsx
+
 import React, { useEffect, useState } from "react";
-import { supabase } from "@/supabaseClient"; // ✅ bruker alias, evt "../supabaseClient" hvis du ikke vil bruke vite.config.ts
+import { supabase } from "@/integrations/supabase/client"; // ✅ riktig import
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 
-interface Chat {
+interface Message {
   id: string;
-  user1: string;
-  user2: string;
-  updated_at: string;
+  chat_id: string;
+  sender: string;
+  content: string;
+  created_at: string;
 }
 
-export default function Messages() {
-  const [chats, setChats] = useState<Chat[]>([]);
+const Messages: React.FC = () => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [chatId] = useState<string>("your-chat-id"); // TODO: Sett inn dynamisk chat_id
 
+  // 🚀 Hent meldinger ved mount
   useEffect(() => {
-    const fetchChats = async () => {
+    const fetchMessages = async () => {
       setLoading(true);
-
-      // 👇 test: hent gjeldende bruker
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError) {
-        console.error("Feil ved henting av bruker:", userError.message);
-        setLoading(false);
-        return;
-      }
-
-      if (!user) {
-        console.warn("Ingen bruker er logget inn");
-        setLoading(false);
-        return;
-      }
-
-      // 👇 hent chats der brukeren er user1 eller user2
       const { data, error } = await supabase
-        .from("chats")
+        .from("messages")
         .select("*")
-        .or(`user1.eq.${user.id},user2.eq.${user.id}`)
-        .order("updated_at", { ascending: false });
+        .eq("chat_id", chatId)
+        .order("created_at", { ascending: true });
 
       if (error) {
-        console.error("Feil ved henting av chats:", error.message);
+        console.error("Error fetching messages:", error);
       } else {
-        console.log("Chats hentet:", data);
-        setChats(data || []);
+        setMessages(data || []);
       }
-
       setLoading(false);
     };
 
-    fetchChats();
-  }, []);
+    fetchMessages();
 
-  if (loading) return <p>Laster...</p>;
+    // 🚀 Realtime oppdatering
+    const channel = supabase
+      .channel("realtime-messages")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new as Message]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [chatId]);
+
+  // 🚀 Send melding
+  const sendMessage = async () => {
+    if (!newMessage.trim()) return;
+
+    const { error } = await supabase.from("messages").insert([
+      {
+        chat_id: chatId,
+        sender: (await supabase.auth.getUser()).data.user?.id,
+        content: newMessage,
+      },
+    ]);
+
+    if (error) {
+      console.error("Error sending message:", error);
+    } else {
+      setNewMessage("");
+    }
+  };
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">Meldinger</h1>
+    <div className="flex flex-col h-screen p-4">
+      <div className="flex-1 overflow-y-auto space-y-2">
+        {loading ? (
+          <p>Laster meldinger...</p>
+        ) : messages.length === 0 ? (
+          <p>Ingen meldinger ennå</p>
+        ) : (
+          messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`p-2 rounded-lg max-w-xs ${
+                msg.sender === (supabase.auth.getUser()).data.user?.id
+                  ? "bg-blue-500 text-white self-end ml-auto"
+                  : "bg-gray-200 text-black self-start mr-auto"
+              }`}
+            >
+              {msg.content}
+              <div className="text-xs text-gray-500">
+                {new Date(msg.created_at).toLocaleTimeString()}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
 
-      {chats.length === 0 ? (
-        <p>Ingen samtaler funnet.</p>
-      ) : (
-        <ul className="space-y-2">
-          {chats.map((chat) => (
-            <li key={chat.id} className="p-2 border rounded-lg">
-              <p>
-                <strong>Chat ID:</strong> {chat.id}
-              </p>
-              <p>
-                <strong>Brukere:</strong> {chat.user1} & {chat.user2}
-              </p>
-              <p>
-                <strong>Sist oppdatert:</strong>{" "}
-                {new Date(chat.updated_at).toLocaleString()}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="flex gap-2 mt-4">
+        <Input
+          placeholder="Skriv en melding..."
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+        />
+        <Button onClick={sendMessage}>Send</Button>
+      </div>
     </div>
   );
-}
+};
+
+export default Messages;
