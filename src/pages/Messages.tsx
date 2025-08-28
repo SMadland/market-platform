@@ -18,7 +18,7 @@ interface Profile {
 interface Message {
   id: string;
   chat_id: string;
-  sender: string;
+  sender: string; // samsvarer med messages.sender
   content: string;
   created_at: string;
 }
@@ -45,11 +45,9 @@ export default function Messages() {
         .from("profiles")
         .select("id, username, display_name, avatar_url")
         .neq("id", user.id);
-      if (error) {
-        console.error("Error fetching friends:", error);
-      } else if (data) {
-        setFriends(data);
-      }
+
+      if (error) console.error("Error fetching friends:", error);
+      else if (data) setFriends(data);
     };
     fetchFriends();
   }, [user]);
@@ -61,12 +59,11 @@ export default function Messages() {
       const { data, error } = await supabase
         .from("chats")
         .select("*")
-        .or(`user1.eq.${user.id},user2.eq.${user.id}`);
-      if (error) {
-        console.error("Error fetching chats:", error);
-      } else if (data) {
-        setChats(data);
-      }
+        .or(`user1.eq.${user.id},user2.eq.${user.id}`)
+        .order("updated_at", { ascending: false });
+
+      if (error) console.error("Error fetching chats:", error);
+      else if (data) setChats(data);
     };
     fetchChats();
   }, [user]);
@@ -80,11 +77,9 @@ export default function Messages() {
         .select("*")
         .eq("chat_id", selectedChat.id)
         .order("created_at", { ascending: true });
-      if (error) {
-        console.error("Error fetching messages:", error);
-      } else if (data) {
-        setMessages(data);
-      }
+
+      if (error) console.error("Error fetching messages:", error);
+      else if (data) setMessages(data);
     };
     fetchMessages();
   }, [selectedChat]);
@@ -92,18 +87,27 @@ export default function Messages() {
   const handleStartChat = async (friendId: string) => {
     if (!user) return;
     try {
+      // Sjekk om chat allerede finnes
+      const { data: existingChats } = await supabase
+        .from("chats")
+        .select("*")
+        .or(`user1.eq.${user.id},user2.eq.${user.id}`)
+        .eq("user1", user.id)
+        .eq("user2", friendId);
+
+      if (existingChats && existingChats.length > 0) {
+        setSelectedChat(existingChats[0]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("chats")
         .insert([{ user1: user.id, user2: friendId }])
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== "23505") {
-        console.error("Error creating chat:", error);
-        return;
-      }
-
-      if (data) {
+      if (error) console.error("Error creating chat:", error);
+      else if (data) {
         setChats((prev) => [...prev, data]);
         setSelectedChat(data);
       }
@@ -114,18 +118,15 @@ export default function Messages() {
 
   const handleSendMessage = async () => {
     if (!user || !selectedChat || !newMessage.trim()) return;
+
     const { data, error } = await supabase
       .from("messages")
       .insert([{ chat_id: selectedChat.id, sender: user.id, content: newMessage }])
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      console.error("Error sending message:", error);
-      return;
-    }
-
-    if (data) {
+    if (error) console.error("Error sending message:", error);
+    else if (data) {
       setMessages((prev) => [...prev, data]);
       setNewMessage("");
     }
