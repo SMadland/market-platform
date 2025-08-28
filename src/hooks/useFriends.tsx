@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
-interface Friend {
+export interface Friend {
   id: string;
   user_id: string;
   username: string | null;
@@ -12,7 +12,7 @@ interface Friend {
   friendship_status?: 'accepted' | 'pending' | 'none';
 }
 
-interface FriendRequest {
+export interface FriendRequest {
   id: string;
   requester_id: string;
   addressee_id: string;
@@ -78,31 +78,18 @@ export const useFriends = () => {
     if (!user) return;
     
     try {
-      const { data: friendshipsData, error } = await supabase
+      const { data: requestsData, error } = await supabase
         .from("friendships")
-        .select("*")
+        .select(`
+          *,
+          requester_profile:profiles!friendships_requester_id_fkey(username, display_name, avatar_url)
+        `)
         .eq("addressee_id", user.id)
         .eq("status", "pending");
 
       if (error) throw error;
 
-      // Fetch profiles for each requester
-      const requestsWithProfiles = await Promise.all(
-        (friendshipsData || []).map(async (friendship) => {
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("username, display_name, avatar_url")
-            .eq("user_id", friendship.requester_id)
-            .single();
-
-          return {
-            ...friendship,
-            requester_profile: profileData
-          };
-        })
-      );
-
-      setFriendRequests(requestsWithProfiles);
+      setFriendRequests(requestsData || []);
     } catch (error) {
       console.error("Error fetching friend requests:", error);
     }
@@ -112,8 +99,6 @@ export const useFriends = () => {
     if (!user || searchTerm.length < 2) return [];
 
     try {
-      console.log('Searching for users with term:', searchTerm);
-      
       const { data: profilesData, error } = await supabase
         .from("profiles")
         .select("*")
@@ -122,8 +107,6 @@ export const useFriends = () => {
         .limit(20);
 
       if (error) throw error;
-      
-      console.log('Found profiles:', profilesData);
 
       // Check friendship status for each user
       const usersWithStatus = await Promise.all(
@@ -136,7 +119,7 @@ export const useFriends = () => {
 
           return {
             ...profile,
-            id: profile.user_id, // Make sure we use user_id as the main id
+            id: profile.user_id,
             friendship_status: friendshipData?.status || 'none'
           };
         })
@@ -149,28 +132,7 @@ export const useFriends = () => {
     }
   };
 
-  const getUserById = async (userId: string): Promise<Friend | null> => {
-    try {
-      const { data: profileData, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
-
-      if (error) throw error;
-
-      return {
-        ...profileData,
-        id: profileData.user_id,
-        friendship_status: 'none'
-      };
-    } catch (error) {
-      console.error("Error fetching user by ID:", error);
-      return null;
-    }
-  };
-
-  const addFriend = async (addresseeId: string) => {
+  const sendFriendRequest = async (addresseeId: string) => {
     if (!user) return false;
 
     try {
@@ -200,8 +162,6 @@ export const useFriends = () => {
       return false;
     }
   };
-
-  const sendFriendRequest = addFriend; // Alias for backward compatibility
 
   const acceptFriendRequest = async (requestId: string) => {
     try {
@@ -269,7 +229,6 @@ export const useFriends = () => {
     friends,
     friendRequests,
     loading,
-    getUserById,
     searchUsers,
     sendFriendRequest,
     acceptFriendRequest,

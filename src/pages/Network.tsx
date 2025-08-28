@@ -1,163 +1,199 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFriends } from "@/hooks/useFriends";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Search, UserPlus, UserCheck, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Loader } from "lucide-react";
 
-const Network = () => {
+export const Network = () => {
   const { user } = useAuth();
-  const { friends, searchUsers, sendFriendRequest, loading } = useFriends();
+  const { friends, searchUsers, sendFriendRequest } = useFriends();
   const { toast } = useToast();
-
-  const [search, setSearch] = useState("");
-  const [results, setResults] = useState<any[]>([]);
+  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
   const [sendingRequest, setSendingRequest] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (search.trim().length > 1) {
-      const fetchResults = async () => {
-        console.log('Searching for:', search);
-        const found = await searchUsers(search);
-        console.log('Search results:', found);
-        setResults(found);
-      };
-      fetchResults();
-    } else {
-      setResults([]);
+  const handleSearch = async (term: string) => {
+    if (term.length < 2) {
+      setSearchResults([]);
+      return;
     }
-  }, [search, searchUsers]);
 
-  const handleAddFriend = async (friendId: string) => {
-    setSendingRequest(friendId);
+    setSearching(true);
     try {
-      const success = await sendFriendRequest(friendId);
-      if (success) {
-      toast({
-        title: "Venneforespørsel sendt!",
-        description: "Venneforespørselen er sendt.",
-      });
-        // Update the results to show the new status
-        setResults(prev => prev.map(user => 
-          user.id === friendId 
-            ? { ...user, friendship_status: 'pending' }
-            : user
-        ));
-      }
+      const results = await searchUsers(term);
+      setSearchResults(results);
     } catch (error) {
+      console.error("Error searching users:", error);
       toast({
         title: "Feil",
-        description: "Kunne ikke sende venneforespørsel.",
+        description: "Kunne ikke søke etter brukere. Prøv igjen.",
         variant: "destructive",
       });
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSendFriendRequest = async (userId: string) => {
+    setSendingRequest(userId);
+    try {
+      const success = await sendFriendRequest(userId);
+      if (success) {
+        // Update search results to reflect new status
+        setSearchResults(prev => 
+          prev.map(user => 
+            user.id === userId 
+              ? { ...user, friendship_status: 'pending' }
+              : user
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error sending friend request:", error);
     } finally {
       setSendingRequest(null);
     }
   };
 
-  return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">My Network</h1>
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      handleSearch(searchTerm);
+    }, 300);
 
-      {/* Search bar */}
-      <div className="flex gap-2">
-        <Input
-          placeholder="Søk etter brukernavn eller navn..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  const getStatusButton = (user: any) => {
+    const isLoading = sendingRequest === user.id;
+    
+    switch (user.friendship_status) {
+      case 'accepted':
+        return (
+          <Button variant="secondary" size="sm" disabled>
+            <UserCheck className="w-4 h-4 mr-2" />
+            Venner
+          </Button>
+        );
+      case 'pending':
+        return (
+          <Button variant="outline" size="sm" disabled>
+            <Clock className="w-4 h-4 mr-2" />
+            Sendt
+          </Button>
+        );
+      default:
+        return (
+          <Button 
+            variant="default" 
+            size="sm"
+            onClick={() => handleSendFriendRequest(user.id)}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <UserPlus className="w-4 h-4 mr-2" />
+            )}
+            Legg til
+          </Button>
+        );
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
+        <p className="text-muted-foreground">Du må være logget inn for å se nettverket.</p>
       </div>
+    );
+  }
 
-      {/* Search results */}
-      {results.length > 0 && (
-        <Card className="p-4 space-y-2">
-          <h2 className="text-lg font-semibold">Søkeresultater</h2>
-          {results.map((r) => (
-            <div
-              key={r.id}
-              className="flex justify-between items-center p-2 border rounded-lg"
-            >
-              <div className="flex items-center gap-2">
-                <Avatar>
-                  <AvatarImage src={r.avatar_url} />
-                  <AvatarFallback>
-                    {(r.display_name || r.username || "U")[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-medium">
-                    {r.display_name || r.username}
-                  </div>
-                  {r.display_name && r.username && (
-                    <div className="text-sm text-muted-foreground">
-                      @{r.username}
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      {/* Header */}
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="px-4 h-16 flex items-center justify-between">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Nettverk
+          </h1>
+          <Badge variant="secondary">
+            {friends.length} venner
+          </Badge>
+        </div>
+      </header>
+
+      <div className="p-4">
+        {/* Search */}
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            placeholder="Søk etter personer..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+          {searching && (
+            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+          )}
+        </div>
+
+        {/* Search Results */}
+        <div className="space-y-4">
+          {searchTerm.length >= 2 && (
+            <>
+              <h2 className="text-lg font-semibold">Søkeresultater</h2>
+              {searchResults.length > 0 ? (
+                searchResults.map((person: any) => (
+                  <Card key={person.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-12 h-12">
+                          <AvatarImage src={person.avatar_url} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {(person.display_name || person.username || '?')[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">
+                            {person.display_name || person.username}
+                          </div>
+                          {person.display_name && person.username && (
+                            <div className="text-sm text-muted-foreground">
+                              @{person.username}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {getStatusButton(person)}
                     </div>
-                  )}
+                  </Card>
+                ))
+              ) : !searching ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Ingen personer funnet</p>
                 </div>
-              </div>
-              <Button
-                size="sm"
-                variant={r.friendship_status === 'pending' ? "outline" : "secondary"}
-                onClick={() => handleAddFriend(r.id)}
-                disabled={r.friendship_status !== 'none' || sendingRequest === r.id}
-              >
-                <UserPlus className="w-4 h-4 mr-1" />
-                {r.friendship_status === 'pending' ? 'Sendt' : 
-                 r.friendship_status === 'accepted' ? 'Venner' : 'Legg til'}
-              </Button>
-            </div>
-          ))}
-        </Card>
-      )}
+              ) : null}
+            </>
+          )}
 
-      {search.length > 1 && results.length === 0 && (
-        <Card className="p-4 text-center">
-          <p className="text-muted-foreground">Ingen brukere funnet for "{search}"</p>
-        </Card>
-      )}
-
-      {/* Friends list */}
-      <Card className="p-4 space-y-2">
-        <h2 className="text-lg font-semibold">Venner</h2>
-        {loading ? (
-          <Loader className="animate-spin w-6 h-6" />
-        ) : friends.length === 0 ? (
-          <p>Ingen venner ennå. Prøv å legge til noen!</p>
-        ) : (
-          friends.map((f) => (
-            <div
-              key={f.user_id}
-              className="flex justify-between items-center p-2 border rounded-lg"
-            >
-              <div className="flex items-center gap-2">
-                <Avatar>
-                  <AvatarImage src={f.avatar_url} />
-                  <AvatarFallback>
-                    {(f.display_name || f.username || "F")[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-medium">
-                    {f.display_name || f.username}
-                  </div>
-                  {f.display_name && f.username && (
-                    <div className="text-sm text-muted-foreground">
-                      @{f.username}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <Badge variant="secondary">Venn</Badge>
+          {searchTerm.length < 2 && (
+            <div className="text-center py-12">
+              <Search className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+              <p className="text-muted-foreground">Søk etter personer for å utvide nettverket ditt</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Skriv minst 2 tegn for å starte søket
+              </p>
             </div>
-          ))
-        )}
-      </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
-
-export default Network;
