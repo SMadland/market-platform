@@ -9,7 +9,12 @@ interface Friend {
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  bio?: string | null;
+  created_at?: string;
+  updated_at?: string;
   friendship_status?: 'accepted' | 'pending' | 'none';
+  name?: string; // Computed field for display
+  avatar?: string; // Computed field for display
 }
 
 interface FriendRequest {
@@ -58,7 +63,14 @@ export const useFriends = () => {
 
         if (profilesError) throw profilesError;
 
-        setFriends(profilesData || []);
+        const friendsWithComputedFields = (profilesData || []).map(profile => ({
+          ...profile,
+          id: profile.user_id,
+          name: profile.display_name || profile.username,
+          avatar: profile.avatar_url,
+          friendship_status: 'accepted' as const
+        }));
+        setFriends(friendsWithComputedFields);
       } else {
         setFriends([]);
       }
@@ -133,7 +145,9 @@ export const useFriends = () => {
           return {
             ...profile,
             id: profile.user_id,
-            friendship_status: friendshipData?.status || 'none'
+            friendship_status: (friendshipData?.status as 'accepted' | 'pending' | 'none') || 'none',
+            name: profile.display_name || profile.username,
+            avatar: profile.avatar_url
           };
         })
       );
@@ -244,6 +258,7 @@ export const useFriends = () => {
     loading,
     searchUsers,
     sendFriendRequest,
+    addFriend: sendFriendRequest, // Alias for compatibility
     acceptFriendRequest,
     rejectFriendRequest,
     refreshFriends: fetchFriends,

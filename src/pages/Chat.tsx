@@ -29,7 +29,7 @@ const Chat = () => {
     {
       id: "2",
       senderId: "me",
-      senderName: user?.name || "Me",
+      senderName: user?.email?.split('@')[0] || "Me",
       text: "I'm good! How about you?",
       timestamp: "2023-08-25T12:01:00Z",
     },
@@ -43,7 +43,7 @@ const Chat = () => {
     const msg: Message = {
       id: Date.now().toString(),
       senderId: user?.id || "me",
-      senderName: user?.name || "Me",
+      senderName: user?.email?.split('@')[0] || "Me",
       text: newMessage,
       timestamp: new Date().toISOString(),
     };
