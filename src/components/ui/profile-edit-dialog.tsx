@@ -120,6 +120,16 @@ export const ProfileEditDialog = ({ profile, onProfileUpdate }: ProfileEditDialo
   const handleSave = async () => {
     if (!user) return;
 
+    // Validate username format
+    if (formData.username && !/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+      toast({
+        title: "Ugyldig brukernavn",
+        description: "Brukernavn kan kun inneholde bokstaver, tall og understrek.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -139,6 +149,7 @@ export const ProfileEditDialog = ({ profile, onProfileUpdate }: ProfileEditDialo
           display_name: formData.display_name || null,
           bio: formData.bio || null,
           avatar_url: formData.avatar_url || null,
+          updated_at: new Date().toISOString(),
         }, {
           onConflict: 'user_id'
         })
