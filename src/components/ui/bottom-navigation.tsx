@@ -11,7 +11,7 @@ const navItems = [
   {
     to: "/messages",
     icon: MessageSquare,
-    label: "Meldinger"
+    label: "Samtaler"
   },
   {
     to: "/network", 
@@ -32,7 +32,8 @@ export const BottomNavigation = () => {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
       <div className="grid grid-cols-4 h-16">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.to;
+          const isActive = location.pathname === item.to || 
+            (item.to === "/messages" && location.pathname.startsWith("/chat/"));
           return (
             <NavLink
               key={item.to}
