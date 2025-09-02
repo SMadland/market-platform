@@ -58,7 +58,7 @@ const UserProfile = () => {
         return;
       }
 
-      setProfile(profileData);
+      setProfile(profileData as UserProfileData);
       
       // Check friendship status
       if (user && user.id !== userId) {

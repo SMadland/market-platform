@@ -54,11 +54,8 @@ const Profile = () => {
       if (error) throw error;
       
       if (profileData) {
-        // Ensure bio field exists
-        setProfile({
-          ...profileData,
-          bio: profileData.bio || null
-        });
+        // Cast to include bio field that was just added to database
+        setProfile(profileData as UserProfile);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -206,6 +203,7 @@ const Profile = () => {
                     product_name={tip.product_name}
                     product_url={tip.product_url}
                     product_price={tip.product_price}
+                    image_url={tip.image_url}
                     created_at={tip.created_at}
                   />
                 ))

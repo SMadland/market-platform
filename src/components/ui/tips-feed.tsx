@@ -152,6 +152,7 @@ export const TipsFeed = ({ tipType }: TipsFeedProps) => {
                     product_name={tip.product_name}
                     product_url={tip.product_url}
                     product_price={tip.product_price}
+                    image_url={tip.image_url}
                     created_at={tip.created_at}
                   />
                 ))
