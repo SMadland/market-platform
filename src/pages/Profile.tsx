@@ -54,7 +54,11 @@ const Profile = () => {
       if (error) throw error;
       
       if (profileData) {
-        setProfile(profileData);
+        // Ensure bio field exists
+        setProfile({
+          ...profileData,
+          bio: profileData.bio || null
+        });
       }
     } catch (error) {
       console.error("Error fetching profile:", error);

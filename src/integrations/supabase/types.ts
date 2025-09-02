@@ -1,4 +1,4 @@
-type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          name: string
           status: string
           stripe_customer_id: string | null
           subscription_type: string
@@ -33,6 +34,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          name?: string
           status?: string
           stripe_customer_id?: string | null
           subscription_type?: string
@@ -45,11 +47,78 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          name?: string
           status?: string
           stripe_customer_id?: string | null
           subscription_type?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      chats: {
+        Row: {
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          user1: string
+          user2: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user1: string
+          user2: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user1?: string
+          user2?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chats_user1_fkey"
+            columns: ["user1"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chats_user2_fkey"
+            columns: ["user2"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          tip_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          tip_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          tip_id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -159,61 +228,124 @@ export type Database = {
       }
       groups: {
         Row: {
+          allow_self_join: boolean
           created_at: string
           created_by: string
           description: string | null
           id: string
+          is_public: boolean
           name: string
           updated_at: string
         }
         Insert: {
+          allow_self_join?: boolean
           created_at?: string
           created_by: string
           description?: string | null
           id?: string
+          is_public?: boolean
           name: string
           updated_at?: string
         }
         Update: {
+          allow_self_join?: boolean
           created_at?: string
           created_by?: string
           description?: string | null
           id?: string
+          is_public?: boolean
           name?: string
           updated_at?: string
         }
         Relationships: []
       }
+      likes: {
+        Row: {
+          created_at: string
+          id: string
+          tip_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tip_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tip_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          chat_id: string
+          content: string
+          created_at: string | null
+          id: string
+          sender: string
+        }
+        Insert: {
+          chat_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          sender: string
+        }
+        Update: {
+          chat_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          sender?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_fkey"
+            columns: ["sender"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
-          bio: string | null
-          created_at: string
+          created_at: string | null
           display_name: string | null
           id: string
-          updated_at: string
+          updated_at: string | null
           user_id: string
-          username: string | null
+          username: string
         }
         Insert: {
           avatar_url?: string | null
-          bio?: string | null
-          created_at?: string
+          created_at?: string | null
           display_name?: string | null
           id?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id: string
-          username?: string | null
+          username: string
         }
         Update: {
           avatar_url?: string | null
-          bio?: string | null
-          created_at?: string
+          created_at?: string | null
           display_name?: string | null
           id?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
-          username?: string | null
+          username?: string
         }
         Relationships: []
       }
@@ -273,7 +405,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_group_member: {
+        Args: { gid: string; uid: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
@@ -288,7 +423,7 @@ type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
-type Tables<
+export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
@@ -317,7 +452,7 @@ type Tables<
       : never
     : never
 
-type TablesInsert<
+export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
@@ -342,7 +477,7 @@ type TablesInsert<
       : never
     : never
 
-type TablesUpdate<
+export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
@@ -367,7 +502,7 @@ type TablesUpdate<
       : never
     : never
 
-type Enums<
+export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
@@ -384,7 +519,7 @@ type Enums<
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
-type CompositeTypes<
+export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
@@ -401,7 +536,7 @@ type CompositeTypes<
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
-const Constants = {
+export const Constants = {
   public: {
     Enums: {},
   },
