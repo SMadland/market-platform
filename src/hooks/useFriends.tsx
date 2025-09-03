@@ -123,6 +123,8 @@ export const useFriends = () => {
   const searchUsers = async (searchTerm: string): Promise<Friend[]> => {
     if (!user || searchTerm.length < 2) return [];
 
+    console.log('Searching for users with term:', searchTerm);
+    
     try {
       const { data: profilesData, error } = await supabase
         .from("profiles")
@@ -132,6 +134,8 @@ export const useFriends = () => {
         .limit(20);
 
       if (error) throw error;
+      
+      console.log('Raw profiles data:', profilesData);
 
       // Check friendship status for each user
       const usersWithStatus = await Promise.all(
@@ -145,6 +149,7 @@ export const useFriends = () => {
           return {
             ...profile,
             id: profile.user_id,
+            user_id: profile.user_id, // Ensure this field is available
             friendship_status: (friendshipData?.status as 'accepted' | 'pending' | 'none') || 'none',
             name: profile.display_name || profile.username,
             avatar: profile.avatar_url
@@ -152,10 +157,35 @@ export const useFriends = () => {
         })
       );
 
+      console.log('Users with status:', usersWithStatus);
       return usersWithStatus;
     } catch (error) {
       console.error("Error searching users:", error);
       return [];
+    }
+  };
+
+  const getUserById = async (userId: string): Promise<Friend | null> => {
+    try {
+      const { data: profileData, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        ...profileData,
+        id: profileData.user_id,
+        user_id: profileData.user_id,
+        friendship_status: 'none',
+        name: profileData.display_name || profileData.username,
+        avatar: profileData.avatar_url
+      };
+    } catch (error) {
+      console.error("Error fetching user by ID:", error);
+      return null;
     }
   };
 
@@ -257,6 +287,7 @@ export const useFriends = () => {
     friendRequests,
     loading,
     searchUsers,
+    getUserById,
     sendFriendRequest,
     addFriend: sendFriendRequest, // Alias for compatibility
     acceptFriendRequest,

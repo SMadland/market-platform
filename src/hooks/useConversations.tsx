@@ -50,14 +50,10 @@ export const useConversations = () => {
     if (!user) return;
     
     try {
-      // Get all conversations for this user
+      // Get all conversations for this user (simplified query)
       const { data: conversationsData, error } = await supabase
         .from("conversations")
-        .select(`
-          *,
-          profiles!conversations_participant1_id_fkey(id, username, display_name, avatar_url),
-          profiles!conversations_participant2_id_fkey(id, username, display_name, avatar_url)
-        `)
+        .select("*")
         .or(`participant1_id.eq.${user.id},participant2_id.eq.${user.id}`)
         .order("updated_at", { ascending: false });
 
@@ -73,9 +69,9 @@ export const useConversations = () => {
           // Get other participant's profile
           const { data: otherProfile } = await supabase
             .from("profiles")
-            .select("id, username, display_name, avatar_url")
+            .select("user_id, username, display_name, avatar_url")
             .eq("user_id", otherParticipantId)
-            .single();
+            .maybeSingle();
 
           // Get last message
           const { data: lastMessage } = await supabase
@@ -84,7 +80,7 @@ export const useConversations = () => {
             .eq("conversation_id", conv.id)
             .order("created_at", { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
           return {
             ...conv,
@@ -115,19 +111,23 @@ export const useConversations = () => {
   const createOrGetConversation = async (otherUserId: string) => {
     if (!user) return null;
 
+    console.log('Creating conversation with user:', otherUserId);
+    
     try {
       // Check if conversation already exists
       const { data: existingConv } = await supabase
         .from("conversations")
         .select("*")
         .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${otherUserId}),and(participant1_id.eq.${otherUserId},participant2_id.eq.${user.id})`)
-        .single();
+        .maybeSingle();
 
       if (existingConv) {
+        console.log('Found existing conversation:', existingConv);
         return existingConv;
       }
 
       // Create new conversation
+      console.log('Creating new conversation between:', user.id, 'and', otherUserId);
       const { data: newConv, error } = await supabase
         .from("conversations")
         .insert({
@@ -139,6 +139,7 @@ export const useConversations = () => {
 
       if (error) throw error;
 
+      console.log('Created new conversation:', newConv);
       await fetchConversations();
       return newConv;
     } catch (error) {
