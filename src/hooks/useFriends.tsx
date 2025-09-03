@@ -28,6 +28,10 @@ interface FriendRequest {
     display_name: string | null;
     avatar_url: string | null;
   };
+  // Computed fields
+  name?: string;
+  username?: string;
+  avatar?: string;
 }
 
 export const useFriends = () => {
@@ -109,7 +113,10 @@ export const useFriends = () => {
 
           return {
             ...friendship,
-            requester_profile: profileData
+            requester_profile: profileData,
+            name: profileData?.display_name || profileData?.username || 'Ukjent',
+            username: profileData?.username || '',
+            avatar: profileData?.avatar_url
           };
         })
       );
@@ -292,6 +299,7 @@ export const useFriends = () => {
     addFriend: sendFriendRequest, // Alias for compatibility
     acceptFriendRequest,
     rejectFriendRequest,
+    declineFriendRequest: rejectFriendRequest, // Alias for compatibility
     refreshFriends: fetchFriends,
     refreshFriendRequests: fetchFriendRequests
   };
