@@ -432,6 +432,9 @@ export type Database = {
           product_name: string | null
           product_price: number | null
           product_url: string | null
+          scraped_description: string | null
+          scraped_image_url: string | null
+          scraped_title: string | null
           tip_type: string
           title: string
           updated_at: string
@@ -448,6 +451,9 @@ export type Database = {
           product_name?: string | null
           product_price?: number | null
           product_url?: string | null
+          scraped_description?: string | null
+          scraped_image_url?: string | null
+          scraped_title?: string | null
           tip_type?: string
           title: string
           updated_at?: string
@@ -464,6 +470,9 @@ export type Database = {
           product_name?: string | null
           product_price?: number | null
           product_url?: string | null
+          scraped_description?: string | null
+          scraped_image_url?: string | null
+          scraped_title?: string | null
           tip_type?: string
           title?: string
           updated_at?: string

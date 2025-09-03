@@ -36,13 +36,59 @@ export const CreateTipDialog = ({ children }: CreateTipDialogProps) => {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isLoadingProductData, setIsLoadingProductData] = useState(false);
   const [formData, setFormData] = useState({
     product_url: "",
+    title: "",
+    product_name: "",
+    image_url: "",
     description: "",
     category: "",
     visibility: "friends" as "friends" | "public",
     tip_type: "private" as "private" | "business"
   });
+
+  const scrapeProductData = async (url: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('scrape-product', {
+        body: { url }
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error scraping product:', error);
+      return null;
+    }
+  };
+
+  const handleProductUrlChange = async (value: string) => {
+    setFormData(prev => ({ ...prev, product_url: value }));
+    
+    if (value && isValidUrl(value)) {
+      setIsLoadingProductData(true);
+      const productData = await scrapeProductData(value);
+      
+      if (productData) {
+        setFormData(prev => ({
+          ...prev,
+          title: productData.title || 'Produktanbefaling',
+          product_name: productData.title || 'Produktanbefaling',
+          image_url: productData.imageUrl || ''
+        }));
+      }
+      setIsLoadingProductData(false);
+    }
+  };
+
+  const isValidUrl = (string: string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,50 +96,19 @@ export const CreateTipDialog = ({ children }: CreateTipDialogProps) => {
 
     setLoading(true);
     try {
-          // Fetch product info from URL before creating tip
-          let productInfo = {
-            title: "Produktanbefaling",
-            image_url: null,
-            product_price: null
-          };
-
-          try {
-            const response = await fetch('/functions/v1/fetch-product-info', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXJwYmZpZmt6bmhxYnlmdHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNTkxODgsImV4cCI6MjA3MDczNTE4OH0.QUVT27UGijBsWHMxE8Fgfg0MPSVdFRWcqMRqjz3GTaQ'}`
-              },
-              body: JSON.stringify({ url: formData.product_url })
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              productInfo = {
-                title: data.title || "Produktanbefaling",
-                image_url: data.image_url,
-                product_price: data.product_price
-              };
-            }
-          } catch (error) {
-            console.error("Error fetching product info:", error);
-            // Continue with default values
-          }
-
-          const { error } = await supabase
-            .from("tips")
-            .insert({
-              title: productInfo.title,
-              description: formData.description,
-              category: formData.category || "Annet",
-              product_url: formData.product_url,
-              image_url: productInfo.image_url,
-              product_price: productInfo.product_price,
-              product_name: productInfo.title,
-              visibility: formData.visibility,
-              tip_type: formData.tip_type,
-              user_id: user.id
-            });
+      const { error } = await supabase
+        .from("tips")
+        .insert({
+          title: formData.title || 'Produktanbefaling',
+          description: formData.description,
+          category: formData.category || "Annet",
+          product_url: formData.product_url,
+          image_url: formData.image_url,
+          product_name: formData.product_name || 'Produktanbefaling',
+          visibility: formData.visibility,
+          tip_type: formData.tip_type,
+          user_id: user.id
+        });
 
       if (error) throw error;
 
@@ -104,6 +119,9 @@ export const CreateTipDialog = ({ children }: CreateTipDialogProps) => {
 
       setFormData({
         product_url: "",
+        title: "",
+        product_name: "",
+        image_url: "",
         description: "",
         category: "",
         visibility: "friends",
@@ -155,9 +173,14 @@ export const CreateTipDialog = ({ children }: CreateTipDialogProps) => {
                 placeholder="https://example.com/produkt"
                 className="pl-10"
                 value={formData.product_url}
-                onChange={(e) => setFormData(prev => ({ ...prev, product_url: e.target.value }))}
+                onChange={(e) => handleProductUrlChange(e.target.value)}
                 required
               />
+              {isLoadingProductData && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                </div>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
               Vi henter automatisk produktinfo og bilde fra lenken
