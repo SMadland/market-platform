@@ -23,13 +23,23 @@ const Messages = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isStarting, setIsStarting] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   // Search for users when search term changes
   useEffect(() => {
     const performSearch = async () => {
       if (searchTerm.trim().length > 1) {
-        const results = await searchUsers(searchTerm);
-        setSearchResults(results);
+        setSearchLoading(true);
+        try {
+          const results = await searchUsers(searchTerm);
+          console.log('Search results:', results);
+          setSearchResults(results);
+        } catch (error) {
+          console.error('Search error:', error);
+          setSearchResults([]);
+        } finally {
+          setSearchLoading(false);
+        }
       } else {
         setSearchResults([]);
       }
@@ -51,6 +61,11 @@ const Messages = () => {
         
         // Navigate to the conversation
         navigate(`/chat/${conversation.id}`);
+        
+        toast({
+          title: "Samtale startet",
+          description: "Du kan nå sende meldinger!",
+        });
       }
     } catch (error) {
       console.error("Error starting conversation:", error);
@@ -100,35 +115,43 @@ const Messages = () => {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
-                      placeholder="Søk etter brukernavn..."
+                      placeholder="Søk etter brukernavn eller navn..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
                     />
                   </div>
                   
+                  {/* Loading indicator */}
+                  {searchLoading && (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      <span className="ml-2 text-sm text-muted-foreground">Søker...</span>
+                    </div>
+                  )}
+                  
                   {/* Search results */}
-                  {searchResults.length > 0 && (
+                  {!searchLoading && searchResults.length > 0 && (
                     <div className="max-h-64 overflow-y-auto border rounded-md p-2 space-y-1">
-                      {searchResults.map((user) => (
+                      {searchResults.map((searchUser) => (
                         <div
-                          key={user.id}
-                          className="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-muted"
-                          onClick={() => handleStartConversation(user.id)}
+                          key={searchUser.user_id}
+                          className="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-muted transition-colors"
+                          onClick={() => handleStartConversation(searchUser.user_id)}
                         >
                           <Avatar className="w-8 h-8">
-                            <AvatarImage src={user.avatar_url} />
-                            <AvatarFallback className="text-sm">
-                              {(user.display_name || user.username || '?')[0].toUpperCase()}
+                            <AvatarImage src={searchUser.avatar_url} />
+                            <AvatarFallback className="text-sm bg-primary/10 text-primary">
+                              {(searchUser.display_name || searchUser.username || '?')[0].toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1">
                             <div className="font-medium">
-                              {user.display_name || user.username}
+                              {searchUser.display_name || searchUser.username || 'Ukjent bruker'}
                             </div>
-                            {user.display_name && user.username && (
+                            {searchUser.display_name && searchUser.username && (
                               <div className="text-xs text-muted-foreground">
-                                @{user.username}
+                                @{searchUser.username}
                               </div>
                             )}
                           </div>
@@ -138,9 +161,9 @@ const Messages = () => {
                     </div>
                   )}
                   
-                  {searchTerm && searchResults.length === 0 && (
+                  {!searchLoading && searchTerm && searchResults.length === 0 && (
                     <div className="text-center py-4 text-muted-foreground">
-                      Ingen brukere funnet
+                      Ingen brukere funnet for "{searchTerm}"
                     </div>
                   )}
                 </div>
@@ -148,7 +171,11 @@ const Messages = () => {
                 <div className="flex justify-end gap-2 pt-4">
                   <Button
                     variant="outline"
-                    onClick={() => setShowStartConversation(false)}
+                    onClick={() => {
+                      setShowStartConversation(false);
+                      setSearchTerm("");
+                      setSearchResults([]);
+                    }}
                     disabled={isStarting}
                   >
                     Avbryt
