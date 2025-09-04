@@ -130,23 +130,35 @@ export const useFriends = () => {
   const searchUsers = async (searchTerm: string): Promise<Friend[]> => {
     if (!user || searchTerm.length < 2) return [];
 
-    console.log('Searching for users with term:', searchTerm);
-    
     try {
+      // Simple search query without complex OR conditions
       const { data: profilesData, error } = await supabase
         .from("profiles")
         .select("*")
         .neq("user_id", user.id)
-        .or(`username.ilike.%${searchTerm}%,display_name.ilike.%${searchTerm}%`)
+        .ilike("username", `%${searchTerm}%`)
         .limit(20);
 
       if (error) throw error;
       
-      console.log('Raw profiles data:', profilesData);
+      // Also search by display_name if no username results
+      let additionalResults: any[] = [];
+      if (!profilesData || profilesData.length === 0) {
+        const { data: displayNameResults } = await supabase
+          .from("profiles")
+          .select("*")
+          .neq("user_id", user.id)
+          .ilike("display_name", `%${searchTerm}%`)
+          .limit(20);
+        
+        additionalResults = displayNameResults || [];
+      }
+
+      const allResults = [...(profilesData || []), ...additionalResults];
 
       // Check friendship status for each user
       const usersWithStatus = await Promise.all(
-        (profilesData || []).map(async (profile) => {
+        allResults.map(async (profile) => {
           const { data: friendshipData } = await supabase
             .from("friendships")
             .select("status")
@@ -156,15 +168,15 @@ export const useFriends = () => {
           return {
             ...profile,
             id: profile.user_id,
-            user_id: profile.user_id, // Ensure this field is available
+            user_id: profile.user_id,
             friendship_status: (friendshipData?.status as 'accepted' | 'pending' | 'none') || 'none',
-            name: profile.display_name || profile.username,
-            avatar: profile.avatar_url
+            name: profile.display_name || profile.username || 'Ukjent bruker',
+            avatar: profile.avatar_url,
+            username: profile.username
           };
         })
       );
 
-      console.log('Users with status:', usersWithStatus);
       return usersWithStatus;
     } catch (error) {
       console.error("Error searching users:", error);

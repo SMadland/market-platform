@@ -169,6 +169,28 @@ const Profile = () => {
           </div>
         </Card>
 
+        {/* GDPR and Privacy Settings */}
+        <Card className="p-4 mb-6">
+          <div className="space-y-3">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start" 
+              onClick={() => navigate('/privacy')}
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              Personvernerklæring
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start" 
+              onClick={() => navigate('/gdpr')}
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Personverninnstillinger
+            </Button>
+          </div>
+        </Card>
+
         {/* Content Tabs */}
         <Tabs defaultValue="tips" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
