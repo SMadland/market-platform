@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, LogOut, Users, Heart, Share, UserPlus, Check, X } from "lucide-react";
+import { Settings, LogOut, Users, Heart, Share, UserPlus, Check, X, Shield } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { ProfileEditDialog } from "@/components/ui/profile-edit-dialog";
 import { supabase } from "@/integrations/supabase/client";

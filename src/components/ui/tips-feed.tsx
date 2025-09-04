@@ -2,6 +2,7 @@ import { TipCard } from "@/components/ui/tip-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SearchBar } from "@/components/ui/search-bar";
 import { TrendingUp, Clock, Star, Loader2 } from "lucide-react";
 import { useTips } from "@/hooks/useTips";
 import { useState } from "react";
@@ -61,10 +62,25 @@ export const TipsFeed = ({ tipType }: TipsFeedProps) => {
   const { tips, loading, refreshTips } = useTips(tipType);
   const [selectedCategory, setSelectedCategory] = useState("Alle");
   const [sortBy, setSortBy] = useState("trending");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredTips = tips.filter(tip => 
-    selectedCategory === "Alle" || tip.category === selectedCategory
-  );
+  const filteredTips = tips.filter(tip => {
+    const categoryMatch = selectedCategory === "Alle" || tip.category === selectedCategory;
+    const searchMatch = !searchQuery || 
+      tip.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tip.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tip.product_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tip.category?.toLowerCase().includes(searchQuery.toLowerCase());
+    return categoryMatch && searchMatch;
+  });
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+  };
 
   const sortedTips = [...filteredTips].sort((a, b) => {
     switch (sortBy) {
@@ -104,6 +120,28 @@ export const TipsFeed = ({ tipType }: TipsFeedProps) => {
             }
           </p>
         </div>
+
+        {/* Search Bar */}
+        <div className="mb-8 max-w-md mx-auto">
+          <SearchBar 
+            onSearch={handleSearch}
+            onClear={handleClearSearch}
+            placeholder={`Søk etter ${tipType === 'private' ? 'private' : 'bedrifts'} tips...`}
+          />
+        </div>
+
+        {/* Search Results Count */}
+        {searchQuery && (
+          <div className="text-center mb-6">
+            <p className="text-sm text-muted-foreground">
+              {filteredTips.length > 0 ? (
+                <>Fant {filteredTips.length} tips for "{searchQuery}"</>
+              ) : (
+                <>Ingen tips funnet for "{searchQuery}"</>
+              )}
+            </p>
+          </div>
+        )}
 
         {/* Categories */}
         <div className="flex flex-wrap gap-2 justify-center mb-8">

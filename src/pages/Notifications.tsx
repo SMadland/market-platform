@@ -16,6 +16,7 @@ interface NotificationWithProfile {
   message: string;
   related_user_id: string | null;
   related_tip_id: string | null;
+  related_conversation_id?: string | null;
   is_read: boolean;
   created_at: string;
   related_user?: {
