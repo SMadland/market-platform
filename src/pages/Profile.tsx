@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, LogOut, Users, Heart, Share, UserPlus, Check, X, Shield } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { ProfileEditDialog } from "@/components/ui/profile-edit-dialog";
+import { SettingsDialog } from "@/components/ui/settings-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -143,10 +144,13 @@ const Profile = () => {
                 })}
               </p>
             </div>
-            <ProfileEditDialog 
-              profile={profile} 
-              onProfileUpdate={fetchProfile}
-            />
+            <div className="flex gap-2">
+              <ProfileEditDialog 
+                profile={profile} 
+                onProfileUpdate={fetchProfile}
+              />
+              <SettingsDialog />
+            </div>
           </div>
 
           {/* Stats */}
@@ -169,27 +173,6 @@ const Profile = () => {
           </div>
         </Card>
 
-        {/* GDPR and Privacy Settings */}
-        <Card className="p-4 mb-6">
-          <div className="space-y-3">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start" 
-              onClick={() => navigate('/privacy')}
-            >
-              <Shield className="w-4 h-4 mr-2" />
-              Personvernerklæring
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start" 
-              onClick={() => navigate('/gdpr')}
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Personverninnstillinger
-            </Button>
-          </div>
-        </Card>
 
         {/* Content Tabs */}
         <Tabs defaultValue="tips" className="w-full">

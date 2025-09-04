@@ -141,16 +141,20 @@ export const ProfileEditDialog = ({ profile, onProfileUpdate }: ProfileEditDialo
         avatar_url: formData.avatar_url || null,
       });
 
+      const updateData: any = {
+        user_id: user.id,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Only include fields that have values
+      if (formData.username.trim()) updateData.username = formData.username.trim();
+      if (formData.display_name.trim()) updateData.display_name = formData.display_name.trim();
+      if (formData.bio.trim()) updateData.bio = formData.bio.trim();
+      if (formData.avatar_url) updateData.avatar_url = formData.avatar_url;
+
       const { error, data } = await supabase
         .from('profiles')
-        .upsert({
-          user_id: user.id,
-          username: formData.username || null,
-          display_name: formData.display_name || null,
-          bio: formData.bio || null,
-          avatar_url: formData.avatar_url || null,
-          updated_at: new Date().toISOString(),
-        }, {
+        .upsert(updateData, {
           onConflict: 'user_id'
         })
         .select();
