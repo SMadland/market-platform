@@ -6,6 +6,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+function decodeHtmlEntities(text: string): string {
+  const entities: { [key: string]: string } = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#x27;': "'",
+    '&#x2F;': '/',
+    '&#xE6;': 'æ',
+    '&#xF8;': 'ø',
+    '&#xE5;': 'å',
+    '&#xC6;': 'Æ',
+    '&#xD8;': 'Ø',
+    '&#xC5;': 'Å',
+  };
+  
+  return text.replace(/&#?\w+;/g, (entity) => {
+    return entities[entity] || entity;
+  }).replace(/&#(\d+);/g, (match, dec) => {
+    return String.fromCharCode(dec);
+  }).replace(/&#x([0-9a-f]+);/gi, (match, hex) => {
+    return String.fromCharCode(parseInt(hex, 16));
+  });
+}
+
 async function scrapeProduct(url: string) {
   try {
     console.log('Fetching URL:', url);
@@ -34,7 +59,7 @@ async function scrapeProduct(url: string) {
     for (const pattern of titlePatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
-        title = match[1].trim();
+        title = decodeHtmlEntities(match[1].trim());
         break;
       }
     }
@@ -73,7 +98,7 @@ async function scrapeProduct(url: string) {
     for (const pattern of descPatterns) {
       const match = html.match(pattern);
       if (match && match[1]) {
-        description = match[1].trim();
+        description = decodeHtmlEntities(match[1].trim());
         break;
       }
     }
