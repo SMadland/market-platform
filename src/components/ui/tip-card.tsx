@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Lightbulb, PartyPopper } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,47 +42,66 @@ export const TipCard = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const [bookmarked, setBookmarked] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  const [userReaction, setUserReaction] = useState<string | null>(null);
+  const [reactionCounts, setReactionCounts] = useState({
+    like: 0,
+    useful: 0,
+    love: 0,
+    celebration: 0,
+  });
   const [commentCount, setCommentCount] = useState(0);
   const [productImage, setProductImage] = useState<string | null>(null);
 
-  // Fetch likes and comments count
+  // Fetch reactions and comments count
   useEffect(() => {
     const fetchInteractions = async () => {
       if (!user) return;
-      
+
       try {
-        // Check if user liked this tip
-        const { data: userLike } = await supabase
-          .from('likes')
-          .select('id')
+        // Check user's reaction
+        const { data: userReactionData } = await supabase
+          .from('reactions')
+          .select('reaction_type')
           .eq('tip_id', id)
           .eq('user_id', user.id)
           .maybeSingle();
-        
-        setIsLiked(!!userLike);
-        
-        // Get like count
-        const { count: likes } = await supabase
-          .from('likes')
-          .select('*', { count: 'exact', head: true })
+
+        setUserReaction(userReactionData?.reaction_type || null);
+
+        // Get all reactions for this tip
+        const { data: reactions } = await supabase
+          .from('reactions')
+          .select('reaction_type')
           .eq('tip_id', id);
-        
-        setLikeCount(likes || 0);
-        
+
+        // Count reactions by type
+        const counts = {
+          like: 0,
+          useful: 0,
+          love: 0,
+          celebration: 0,
+        };
+
+        reactions?.forEach((reaction) => {
+          if (reaction.reaction_type in counts) {
+            counts[reaction.reaction_type as keyof typeof counts]++;
+          }
+        });
+
+        setReactionCounts(counts);
+
         // Get comment count
         const { count: comments } = await supabase
           .from('comments')
           .select('*', { count: 'exact', head: true })
           .eq('tip_id', id);
-        
+
         setCommentCount(comments || 0);
       } catch (error) {
         console.error('Error fetching interactions:', error);
       }
     };
-    
+
     fetchInteractions();
   }, [id, user]);
 
@@ -123,41 +142,58 @@ export const TipCard = ({
     fetchProductImage();
   }, [product_url, image_url]);
 
-  const handleLike = async () => {
+  const handleReaction = async (reactionType: 'like' | 'useful' | 'love' | 'celebration') => {
     if (!user) {
       toast({
         title: "Logg inn påkrevd",
-        description: "Du må være logget inn for å like tips.",
+        description: "Du må være logget inn for å reagere på tips.",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      if (isLiked) {
-        // Remove like
+      if (userReaction === reactionType) {
+        // Remove reaction if clicking the same one
         await supabase
-          .from('likes')
+          .from('reactions')
           .delete()
           .eq('tip_id', id)
           .eq('user_id', user.id);
-        
-        setIsLiked(false);
-        setLikeCount(prev => prev - 1);
+
+        setUserReaction(null);
+        setReactionCounts(prev => ({
+          ...prev,
+          [reactionType]: Math.max(0, prev[reactionType] - 1),
+        }));
       } else {
-        // Add like
-        await supabase
-          .from('likes')
-          .insert({ tip_id: id, user_id: user.id });
-        
-        setIsLiked(true);
-        setLikeCount(prev => prev + 1);
+        // Add or update reaction
+        const { error } = await supabase
+          .from('reactions')
+          .upsert(
+            { tip_id: id, user_id: user.id, reaction_type: reactionType },
+            { onConflict: 'user_id,tip_id' }
+          );
+
+        if (error) throw error;
+
+        // Update counts
+        setReactionCounts(prev => {
+          const newCounts = { ...prev };
+          if (userReaction) {
+            newCounts[userReaction as keyof typeof newCounts] = Math.max(0, newCounts[userReaction as keyof typeof newCounts] - 1);
+          }
+          newCounts[reactionType]++;
+          return newCounts;
+        });
+
+        setUserReaction(reactionType);
       }
     } catch (error) {
-      console.error('Error toggling like:', error);
+      console.error('Error toggling reaction:', error);
       toast({
         title: "Feil",
-        description: "Kunne ikke oppdatere like. Prøv igjen.",
+        description: "Kunne ikke oppdatere reaksjon. Prøv igjen.",
         variant: "destructive",
       });
     }
@@ -305,29 +341,85 @@ export const TipCard = ({
 
       {/* Actions */}
       <div className="flex items-center justify-between pt-4 border-t border-border/50">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className={`flex items-center gap-2 px-3 py-2 transition-colors ${
-              isLiked 
-                ? 'text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20' 
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`flex items-center gap-1.5 px-2.5 py-2 transition-colors ${
+              userReaction === 'like'
+                ? 'text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20'
                 : 'text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20'
             }`}
-            onClick={handleLike}
+            onClick={() => handleReaction('like')}
+            title="Like"
           >
-            <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-            <span className="text-sm font-medium">{likeCount}</span>
+            <Heart className={`w-4 h-4 ${userReaction === 'like' ? 'fill-current' : ''}`} />
+            {reactionCounts.like > 0 && (
+              <span className="text-xs font-medium">{reactionCounts.like}</span>
+            )}
           </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-primary hover:bg-primary/5"
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`flex items-center gap-1.5 px-2.5 py-2 transition-colors ${
+              userReaction === 'useful'
+                ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-950/20'
+                : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950/20'
+            }`}
+            onClick={() => handleReaction('useful')}
+            title="Nyttig"
+          >
+            <Lightbulb className={`w-4 h-4 ${userReaction === 'useful' ? 'fill-current' : ''}`} />
+            {reactionCounts.useful > 0 && (
+              <span className="text-xs font-medium">{reactionCounts.useful}</span>
+            )}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`flex items-center gap-1.5 px-2.5 py-2 transition-colors ${
+              userReaction === 'love'
+                ? 'text-pink-500 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-950/20'
+                : 'text-muted-foreground hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-950/20'
+            }`}
+            onClick={() => handleReaction('love')}
+            title="Elsker"
+          >
+            <span className="text-base leading-none">{userReaction === 'love' ? '😍' : '😊'}</span>
+            {reactionCounts.love > 0 && (
+              <span className="text-xs font-medium">{reactionCounts.love}</span>
+            )}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`flex items-center gap-1.5 px-2.5 py-2 transition-colors ${
+              userReaction === 'celebration'
+                ? 'text-purple-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/20'
+                : 'text-muted-foreground hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/20'
+            }`}
+            onClick={() => handleReaction('celebration')}
+            title="Feiring"
+          >
+            <PartyPopper className={`w-4 h-4 ${userReaction === 'celebration' ? 'fill-current' : ''}`} />
+            {reactionCounts.celebration > 0 && (
+              <span className="text-xs font-medium">{reactionCounts.celebration}</span>
+            )}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-1.5 px-2.5 py-2 text-muted-foreground hover:text-primary hover:bg-primary/5"
             onClick={handleComment}
           >
             <MessageCircle className="w-4 h-4" />
-            <span className="text-sm font-medium">{commentCount}</span>
+            {commentCount > 0 && (
+              <span className="text-xs font-medium">{commentCount}</span>
+            )}
           </Button>
         </div>
 
@@ -335,8 +427,8 @@ export const TipCard = ({
           <Button variant="ghost" size="sm" className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/5">
             <Share2 className="w-4 h-4" />
           </Button>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             onClick={handleBookmark}
             className={`p-2 ${bookmarked ? 'text-accent' : 'text-muted-foreground'} hover:text-accent`}
