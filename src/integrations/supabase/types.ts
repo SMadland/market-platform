@@ -349,93 +349,6 @@ export type Database = {
         }
         Relationships: []
       }
-      reactions: {
-        Row: {
-          created_at: string
-          id: string
-          reaction_type: string
-          tip_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          reaction_type: string
-          tip_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          reaction_type?: string
-          tip_id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      bookmarks: {
-        Row: {
-          created_at: string
-          id: string
-          tip_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          tip_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          tip_id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      notifications: {
-        Row: {
-          created_at: string
-          id: string
-          is_read: boolean
-          message: string
-          related_conversation_id: string | null
-          related_tip_id: string | null
-          related_user_id: string | null
-          title: string
-          type: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_read?: boolean
-          message: string
-          related_conversation_id?: string | null
-          related_tip_id?: string | null
-          related_user_id?: string | null
-          title: string
-          type: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_read?: boolean
-          message?: string
-          related_conversation_id?: string | null
-          related_tip_id?: string | null
-          related_user_id?: string | null
-          title?: string
-          type?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       messages: {
         Row: {
           chat_id: string
@@ -573,10 +486,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      is_group_member: {
-        Args: { gid: string; uid: string }
-        Returns: boolean
-      }
+      is_group_member: { Args: { gid: string; uid: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
