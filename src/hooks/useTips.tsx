@@ -25,7 +25,7 @@ interface Tip {
   } | null;
 }
 
-export const useTips = (tipType: 'private' | 'business' = 'private') => {
+export const useTips = (tipType: 'private' | 'business' = 'private', showPublicOnly: boolean = false) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [tips, setTips] = useState<Tip[]>([]);
@@ -35,11 +35,17 @@ export const useTips = (tipType: 'private' | 'business' = 'private') => {
     if (!user) return;
     
     try {
-      const { data: tipsData, error } = await supabase
+      // Fetch tips with visibility filter
+      let query = supabase
         .from("tips")
         .select("*")
-        .eq("tip_type", tipType)
-        .order("created_at", { ascending: false });
+        .eq("tip_type", tipType);
+      
+      if (showPublicOnly) {
+        query = query.eq("visibility", "public");
+      }
+      
+      const { data: tipsData, error } = await query;
 
       if (error) throw error;
 
@@ -59,7 +65,60 @@ export const useTips = (tipType: 'private' | 'business' = 'private') => {
         })
       );
 
-      setTips(tipsWithProfiles);
+      // Fetch likes and comments counts
+      const { data: allLikes } = await supabase
+        .from("likes")
+        .select("tip_id");
+      
+      const { data: allComments } = await supabase
+        .from("comments")
+        .select("tip_id");
+
+      const likesCountMap: Record<string, number> = {};
+      const commentsCountMap: Record<string, number> = {};
+
+      allLikes?.forEach(like => {
+        likesCountMap[like.tip_id] = (likesCountMap[like.tip_id] || 0) + 1;
+      });
+
+      allComments?.forEach(comment => {
+        commentsCountMap[comment.tip_id] = (commentsCountMap[comment.tip_id] || 0) + 1;
+      });
+
+      // Fetch user's friendships
+      const { data: friendships } = await supabase
+        .from("friendships")
+        .select("requester_id, addressee_id")
+        .eq("status", "accepted")
+        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
+
+      const friendIds = new Set<string>();
+      friendships?.forEach(f => {
+        const friendId = f.requester_id === user.id ? f.addressee_id : f.requester_id;
+        friendIds.add(friendId);
+      });
+
+      // Calculate score for each tip and sort
+      const tipsWithScores = tipsWithProfiles.map(tip => {
+        const likesCount = likesCountMap[tip.id] || 0;
+        const commentsCount = commentsCountMap[tip.id] || 0;
+        const isFriend = friendIds.has(tip.user_id);
+        const ageInDays = Math.floor((Date.now() - new Date(tip.created_at).getTime()) / (1000 * 60 * 60 * 24));
+
+        // Calculate score
+        let score = 0;
+        if (isFriend) score += 1000; // Big boost for friends
+        score += likesCount * 10;
+        score += commentsCount * 15; // Comments are worth more
+        score += Math.max(0, 7 - ageInDays) * 50; // Recency boost (last 7 days)
+
+        return { ...tip, score };
+      });
+
+      // Sort by score
+      tipsWithScores.sort((a, b) => b.score - a.score);
+
+      setTips(tipsWithScores);
     } catch (error) {
       console.error("Error fetching tips:", error);
       toast({

@@ -77,6 +77,7 @@ const Notifications = () => {
       case 'friend_request_accepted':
         navigate('/network');
         break;
+      case 'new_tip_from_friend':
       case 'tip_liked':
       case 'tip_commented':
         navigate('/feed');
@@ -110,6 +111,8 @@ const Notifications = () => {
       case 'friend_request_received':
       case 'friend_request_accepted':
         return '👥';
+      case 'new_tip_from_friend':
+        return '✨';
       case 'tip_liked':
         return '❤️';
       case 'tip_commented':
