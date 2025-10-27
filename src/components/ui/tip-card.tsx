@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { CommentDialog } from "@/components/ui/comment-dialog";
+import { CommentsSection } from "@/components/ui/comments-section";
 
 interface TipCardProps {
   id: string;
@@ -202,7 +202,7 @@ export const TipCard = ({
   };
 
   const handleComment = () => {
-    setShowComments(true);
+    setShowComments(!showComments);
   };
 
   const handleBookmark = () => {
@@ -436,12 +436,12 @@ export const TipCard = ({
         </div>
       </div>
 
-      <CommentDialog
-        tipId={id}
-        open={showComments}
-        onOpenChange={setShowComments}
-        onCommentCountChange={setCommentCount}
-      />
+      {showComments && (
+        <CommentsSection
+          tipId={id}
+          onCommentCountChange={setCommentCount}
+        />
+      )}
     </Card>
   );
 };

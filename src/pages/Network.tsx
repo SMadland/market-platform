@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, UserPlus, MessageCircle, Users, Check, X } from "lucide-react";
+import { Search, UserPlus, MessageCircle, Users, Check, X, Share2, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Network = () => {
@@ -126,6 +126,36 @@ const Network = () => {
     }
   };
 
+  const handleCopyInviteLink = () => {
+    const inviteLink = `${window.location.origin}/auth`;
+    navigator.clipboard.writeText(inviteLink);
+    toast({
+      title: "Lenke kopiert",
+      description: "Invitasjonslenken er kopiert til utklippstavlen.",
+    });
+  };
+
+  const handleShareInviteLink = async () => {
+    const inviteLink = `${window.location.origin}/auth`;
+    const shareText = "Bli med meg på Mamon - din smarte shoppingassistent!";
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Invitasjon til Mamon",
+          text: shareText,
+          url: inviteLink,
+        });
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          handleCopyInviteLink();
+        }
+      }
+    } else {
+      handleCopyInviteLink();
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -160,6 +190,38 @@ const Network = () => {
           </TabsList>
 
           <TabsContent value="search" className="space-y-4">
+            <Card className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Share2 className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold mb-1">Inviter venner til Mamon</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Del lenken med venner og familie slik at de også kan bli med!
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleShareInviteLink}
+                      className="flex-1 sm:flex-none"
+                    >
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Del lenke
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleCopyInviteLink}
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Kopier
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
