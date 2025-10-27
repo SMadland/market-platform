@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { CommentDialog } from "@/components/ui/comment-dialog";
 
 interface TipCardProps {
   id: string;
@@ -51,6 +52,7 @@ export const TipCard = ({
   });
   const [commentCount, setCommentCount] = useState(0);
   const [productImage, setProductImage] = useState<string | null>(null);
+  const [showComments, setShowComments] = useState(false);
 
   // Fetch reactions and comments count
   useEffect(() => {
@@ -200,11 +202,7 @@ export const TipCard = ({
   };
 
   const handleComment = () => {
-    // For now, just show a toast - you can implement a comment dialog later
-    toast({
-      title: "Kommentarer",
-      description: "Kommentarfunksjon kommer snart!",
-    });
+    setShowComments(true);
   };
 
   const handleBookmark = () => {
@@ -437,6 +435,13 @@ export const TipCard = ({
           </Button>
         </div>
       </div>
+
+      <CommentDialog
+        tipId={id}
+        open={showComments}
+        onOpenChange={setShowComments}
+        onCommentCountChange={setCommentCount}
+      />
     </Card>
   );
 };
