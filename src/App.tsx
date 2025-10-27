@@ -20,6 +20,7 @@ import UserProfile from "./pages/UserProfile";
 import Business from "./pages/Business";
 import Privacy from "./pages/Privacy";
 import GdprSettings from "./pages/GdprSettings";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const AppContent = () => {
         <Route path="/business" element={<Business />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/gdpr" element={<GdprSettings />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>

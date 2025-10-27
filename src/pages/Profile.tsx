@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { useTips } from "@/hooks/useTips";
 import { useFriends } from "@/hooks/useFriends";
 import { TipCard } from "@/components/ui/tip-card";
@@ -26,6 +27,7 @@ interface UserProfile {
 
 const Profile = () => {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
   const { tips, loading } = useTips();
   const { friends, friendRequests, acceptFriendRequest, rejectFriendRequest } = useFriends();
   const { toast } = useToast();
@@ -152,6 +154,20 @@ const Profile = () => {
               <SettingsDialog />
             </div>
           </div>
+
+          {/* Admin Button */}
+          {isAdmin && (
+            <div className="mb-4">
+              <Button
+                onClick={() => navigate('/admin')}
+                className="w-full"
+                variant="outline"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Adminpanel
+              </Button>
+            </div>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 pt-4 border-t">
