@@ -32,7 +32,10 @@ export const useTips = (tipType: 'private' | 'business' = 'private', showPublicO
   const [loading, setLoading] = useState(true);
 
   const fetchTips = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     
     try {
       // Fetch tips with visibility filter
@@ -132,8 +135,13 @@ export const useTips = (tipType: 'private' | 'business' = 'private', showPublicO
   };
 
   useEffect(() => {
-    fetchTips();
-  }, [user, tipType]);
+    if (user) {
+      fetchTips();
+    } else {
+      setLoading(false);
+      setTips([]);
+    }
+  }, [user, tipType, showPublicOnly]);
 
   const refreshTips = () => {
     fetchTips();
