@@ -36,8 +36,8 @@ export const BottomNavigation = () => {
   const { unreadCount } = useNotifications();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t border-border safe-bottom">
-      <div className="grid grid-cols-5 h-16 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+      <div className="grid grid-cols-5 h-16">
         {navItems.map((item) => {
           const isActive = location.pathname === item.to || 
             (item.to === "/messages" && location.pathname.startsWith("/conversation/"));
@@ -48,7 +48,7 @@ export const BottomNavigation = () => {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 text-xs transition-colors",
+                "flex flex-col items-center justify-center gap-1 text-xs transition-colors h-full",
                 isActive 
                   ? "text-primary font-medium" 
                   : "text-muted-foreground hover:text-foreground"

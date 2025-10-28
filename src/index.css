@@ -118,15 +118,6 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
-  /* Safe area padding for iOS devices */
-  .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  
-  .pb-safe {
-    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-  }
-  
   /* Mobile optimizations */
   @media (max-width: 640px) {
     .container {
@@ -134,8 +125,8 @@ All colors MUST be HSL.
     }
   }
   
-  /* Touch target sizes */
-  button, a {
+  /* Touch target sizes for interactive elements */
+  .touch-target {
     min-height: 44px;
     min-width: 44px;
   }
