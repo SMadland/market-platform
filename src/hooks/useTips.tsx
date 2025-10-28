@@ -141,6 +141,29 @@ export const useTips = (tipType: 'private' | 'business' = 'private', showPublicO
       setLoading(false);
       setTips([]);
     }
+
+    // Set up real-time subscription for new tips
+    if (user) {
+      const channel = supabase
+        .channel(`tips_${tipType}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'tips',
+            filter: `tip_type=eq.${tipType}`
+          },
+          () => {
+            fetchTips();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [user, tipType, showPublicOnly]);
 
   const refreshTips = () => {
