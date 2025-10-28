@@ -35,7 +35,7 @@ const AppContent = () => {
         <Route path="/auth" element={<Auth />} />
         <Route path="/feed" element={<Feed />} />
         <Route path="/messages" element={<Messages />} />
-        <Route path="/chat/:conversationId" element={<Conversation />} />
+        <Route path="/conversation/:conversationId" element={<Conversation />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/network" element={<Network />} />
         <Route path="/profile" element={<Profile />} />

@@ -1,0 +1,41 @@
+{
+  "name": "Mamon - Del dine favorittopplevelser",
+  "short_name": "Mamon",
+  "description": "Få tips fra venner og familie som kjenner deg best. Del anbefalinger og få de beste tipsene fra ditt nettverk.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0fdff",
+  "theme_color": "#0c8ebd",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["social", "shopping", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Se tips",
+      "short_name": "Tips",
+      "description": "Se tips fra venner",
+      "url": "/feed",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Meldinger",
+      "short_name": "Chat",
+      "description": "Åpne meldinger",
+      "url": "/messages",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

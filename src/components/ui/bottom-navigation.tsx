@@ -36,11 +36,11 @@ export const BottomNavigation = () => {
   const { unreadCount } = useNotifications();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
-      <div className="grid grid-cols-5 h-16">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t border-border safe-bottom">
+      <div className="grid grid-cols-5 h-16 pb-safe">
         {navItems.map((item) => {
           const isActive = location.pathname === item.to || 
-            (item.to === "/messages" && location.pathname.startsWith("/chat/"));
+            (item.to === "/messages" && location.pathname.startsWith("/conversation/"));
           const isNotifications = item.to === "/notifications";
           
           return (
