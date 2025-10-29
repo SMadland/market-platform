@@ -16,13 +16,19 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png'],
+      devOptions: {
+        enabled: false
+      },
       manifest: {
         name: 'Mamon - Del dine favorittopplevelser',
         short_name: 'Mamon',
-        description: 'Få tips fra venner og familie som kjenner deg best',
+        description: 'Få tips fra venner og familie som kjenner deg best. Del anbefalinger og få de beste tipsene fra ditt nettverk.',
         theme_color: '#0c8ebd',
         background_color: '#f0fdff',
         display: 'standalone',
+        orientation: 'portrait',
+        scope: '/',
+        start_url: '/',
         icons: [
           {
             src: 'icon-192.png',

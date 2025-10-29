@@ -27,16 +27,16 @@ export const LandingPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center px-4 py-20 overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center px-4 py-20 overflow-hidden w-full">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
         
-        <div className="relative z-10 max-w-6xl mx-auto text-center">
+        <div className="relative z-10 max-w-6xl mx-auto text-center w-full px-4">
           <div className="mb-8">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-foreground">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 text-foreground break-words">
               Del dine favorittopplevelser og kjøp
             </h1>
             
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed break-words">
               Få tips fra venner og familie som kjenner deg best. Oppdag produkter gjennom personlige anbefalinger.
             </p>
           </div>

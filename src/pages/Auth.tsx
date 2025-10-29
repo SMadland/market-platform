@@ -75,8 +75,8 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/10 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/10 flex items-center justify-center p-4 w-full">
+      <div className="w-full max-w-md px-4">
         <Button 
           variant="ghost" 
           onClick={() => navigate('/')}
@@ -89,7 +89,7 @@ const Auth = () => {
         <Card className="shadow-lg border-border/50">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              TipsHub
+              Mamon
             </CardTitle>
             <CardDescription>
               Bli med i fellesskapet for tipsdeling
