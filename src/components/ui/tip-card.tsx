@@ -238,9 +238,9 @@ export const TipCard = ({
   };
 
   return (
-    <Card className="p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-card to-primary/2 border border-primary/10">
+    <Card className="p-4 sm:p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-card to-primary/2 border border-primary/10 w-full">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-3 sm:mb-4">
         <div className="flex items-center gap-3">
           <Avatar 
             className="w-10 h-10 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" 
@@ -338,12 +338,12 @@ export const TipCard = ({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-between pt-4 border-t border-border/50">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 sm:pt-4 border-t border-border/50 gap-2 sm:gap-0">
+        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
           <Button
             variant="ghost"
             size="sm"
-            className={`flex items-center gap-1.5 px-2.5 py-2 transition-colors ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 transition-colors ${
               userReaction === 'like'
                 ? 'text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20'
                 : 'text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20'
@@ -351,7 +351,7 @@ export const TipCard = ({
             onClick={() => handleReaction('like')}
             title="Like"
           >
-            <Heart className={`w-4 h-4 ${userReaction === 'like' ? 'fill-current' : ''}`} />
+            <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${userReaction === 'like' ? 'fill-current' : ''}`} />
             {reactionCounts.like > 0 && (
               <span className="text-xs font-medium">{reactionCounts.like}</span>
             )}
@@ -360,7 +360,7 @@ export const TipCard = ({
           <Button
             variant="ghost"
             size="sm"
-            className={`flex items-center gap-1.5 px-2.5 py-2 transition-colors ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 transition-colors ${
               userReaction === 'useful'
                 ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-950/20'
                 : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950/20'
@@ -368,7 +368,7 @@ export const TipCard = ({
             onClick={() => handleReaction('useful')}
             title="Nyttig"
           >
-            <Lightbulb className={`w-4 h-4 ${userReaction === 'useful' ? 'fill-current' : ''}`} />
+            <Lightbulb className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${userReaction === 'useful' ? 'fill-current' : ''}`} />
             {reactionCounts.useful > 0 && (
               <span className="text-xs font-medium">{reactionCounts.useful}</span>
             )}
@@ -377,7 +377,7 @@ export const TipCard = ({
           <Button
             variant="ghost"
             size="sm"
-            className={`flex items-center gap-1.5 px-2.5 py-2 transition-colors ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 transition-colors ${
               userReaction === 'love'
                 ? 'text-pink-500 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-950/20'
                 : 'text-muted-foreground hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-950/20'
@@ -385,7 +385,7 @@ export const TipCard = ({
             onClick={() => handleReaction('love')}
             title="Elsker"
           >
-            <span className="text-base leading-none">{userReaction === 'love' ? '😍' : '😊'}</span>
+            <span className="text-sm sm:text-base leading-none">{userReaction === 'love' ? '😍' : '😊'}</span>
             {reactionCounts.love > 0 && (
               <span className="text-xs font-medium">{reactionCounts.love}</span>
             )}
@@ -394,7 +394,7 @@ export const TipCard = ({
           <Button
             variant="ghost"
             size="sm"
-            className={`flex items-center gap-1.5 px-2.5 py-2 transition-colors ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 transition-colors ${
               userReaction === 'celebration'
                 ? 'text-purple-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/20'
                 : 'text-muted-foreground hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/20'
@@ -402,7 +402,7 @@ export const TipCard = ({
             onClick={() => handleReaction('celebration')}
             title="Feiring"
           >
-            <PartyPopper className={`w-4 h-4 ${userReaction === 'celebration' ? 'fill-current' : ''}`} />
+            <PartyPopper className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${userReaction === 'celebration' ? 'fill-current' : ''}`} />
             {reactionCounts.celebration > 0 && (
               <span className="text-xs font-medium">{reactionCounts.celebration}</span>
             )}
@@ -411,27 +411,27 @@ export const TipCard = ({
           <Button
             variant="ghost"
             size="sm"
-            className="flex items-center gap-1.5 px-2.5 py-2 text-muted-foreground hover:text-primary hover:bg-primary/5"
+            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 text-muted-foreground hover:text-primary hover:bg-primary/5"
             onClick={handleComment}
           >
-            <MessageCircle className="w-4 h-4" />
+            <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             {commentCount > 0 && (
               <span className="text-xs font-medium">{commentCount}</span>
             )}
           </Button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/5">
-            <Share2 className="w-4 h-4" />
+        <div className="flex items-center gap-1 sm:gap-2">
+          <Button variant="ghost" size="sm" className="p-1.5 sm:p-2 text-muted-foreground hover:text-primary hover:bg-primary/5">
+            <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleBookmark}
-            className={`p-2 ${bookmarked ? 'text-accent' : 'text-muted-foreground'} hover:text-accent`}
+            className={`p-1.5 sm:p-2 ${bookmarked ? 'text-accent' : 'text-muted-foreground'} hover:text-accent`}
           >
-            <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-current' : ''}`} />
+            <Bookmark className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${bookmarked ? 'fill-current' : ''}`} />
           </Button>
         </div>
       </div>

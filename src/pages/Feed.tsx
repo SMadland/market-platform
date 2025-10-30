@@ -38,20 +38,23 @@ const Feed = () => {
       </header>
 
       {/* Feed Content with Tabs */}
-      <div className="max-w-4xl mx-auto px-4 pt-4">
+      <div className="w-full max-w-4xl mx-auto px-4 pt-4">
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'private' | 'business' | 'explore')} className="w-full">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 mb-8">
-            <TabsTrigger value="private" className="flex items-center gap-2">
-              <Home className="w-4 h-4" />
-              Privat
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 mb-4 sm:mb-8">
+            <TabsTrigger value="private" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Home className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Privat</span>
+              <span className="xs:hidden">Priv</span>
             </TabsTrigger>
-            <TabsTrigger value="business" className="flex items-center gap-2">
-              <Briefcase className="w-4 h-4" />
-              Bedrift
+            <TabsTrigger value="business" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Briefcase className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Bedrift</span>
+              <span className="xs:hidden">Bedr</span>
             </TabsTrigger>
-            <TabsTrigger value="explore" className="flex items-center gap-2">
-              <Compass className="w-4 h-4" />
-              Utforsk
+            <TabsTrigger value="explore" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Compass className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Utforsk</span>
+              <span className="xs:hidden">Utfor</span>
             </TabsTrigger>
           </TabsList>
           

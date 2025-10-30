@@ -75,8 +75,8 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/10 flex items-center justify-center p-4 w-full">
-      <div className="w-full max-w-md px-4">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/10 flex items-center justify-center w-full">
+      <div className="w-full max-w-md px-4 sm:px-6">
         <Button 
           variant="ghost" 
           onClick={() => navigate('/')}
