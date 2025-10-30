@@ -2,16 +2,6 @@
   width: 100%;
   min-height: 100vh;
   overflow-x: hidden;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Mobile safe area support */
-@supports (padding: env(safe-area-inset-bottom)) {
-  #root {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
 }
 
 .logo {

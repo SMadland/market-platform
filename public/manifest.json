@@ -3,7 +3,6 @@
   "short_name": "Mamon",
   "description": "Del dine favorittopplevelser med venner og familie",
   "start_url": "/",
-  "id": "/",
   "display": "standalone",
   "background_color": "#f0fdff",
   "theme_color": "#0c8ebd",
@@ -23,23 +22,5 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ],
-  "shortcuts": [
-    {
-      "name": "Feed",
-      "short_name": "Feed",
-      "description": "Se tips fra venner",
-      "url": "/feed",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Meldinger",
-      "short_name": "Chat",
-      "description": "Åpne meldinger",
-      "url": "/messages",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
-    }
-  ],
-  "display_override": ["standalone", "fullscreen"],
-  "prefer_related_applications": false
+  ]
 }
