@@ -15,6 +15,18 @@
   }
 }
 
+/* Mobile touch optimization */
+@media (max-width: 768px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;
